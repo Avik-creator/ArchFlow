@@ -62,6 +62,7 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
   const {
     nodes,
     edges,
+    setEdges,
     onNodesChange,
     onEdgesChange,
     onConnect,
@@ -84,6 +85,13 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
   const [collabPanelOpen, setCollabPanelOpen] = useState(false)
   const simulationRunnerRef = useRef<ReturnType<typeof createSimulationRunner> | null>(null)
+
+  useEffect(() => {
+    if (!edges.length) return
+    if (edges.some((edge) => !edge.style?.stroke)) {
+      setEdges(edges)
+    }
+  }, [edges, setEdges])
 
   useEffect(() => {
     if (isMobile && (selectedNodeId || selectedEdgeId)) {
@@ -337,7 +345,7 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
               colorMode="dark"
               defaultEdgeOptions={{
                 type: "smoothstep",
-                style: { stroke: "#8b5cf6", strokeWidth: 1.5 },
+                style: { strokeWidth: 1.5 },
                 animated: false,
               }}
               proOptions={{ hideAttribution: true }}

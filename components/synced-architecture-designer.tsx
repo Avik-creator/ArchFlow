@@ -38,7 +38,7 @@ import type {
   ArchitectureNode as ArchNode,
   ArchitectureEdge,
 } from "@/lib/architecture-types"
-import { cn } from "@/lib/utils"
+import { cn, getEdgeColor } from "@/lib/utils"
 import { Menu, PanelRight, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -46,6 +46,23 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 const nodeTypes: NodeTypes = {
   architecture: ArchitectureNode,
 }
+
+const EDGE_STROKE_WIDTH = 2
+
+const colorizeEdges = (edges: ArchitectureEdge[]) =>
+  edges.map((edge, index) => {
+    const key = edge.id ?? `${edge.source ?? "edge"}-${edge.target ?? "edge"}-${index}`
+    const color = (edge.data?.color as string | undefined) ?? getEdgeColor(key)
+    return {
+      ...edge,
+      style: {
+        ...edge.style,
+        stroke: color,
+        strokeWidth: edge.style?.strokeWidth ?? EDGE_STROKE_WIDTH,
+      },
+      data: { ...edge.data, color },
+    }
+  })
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
@@ -94,8 +111,14 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
   }, [])
 
   const setEdges = useMutation(({ storage }, newEdges: ArchitectureEdge[]) => {
-    storage.set("edges", newEdges)
+    storage.set("edges", colorizeEdges(newEdges))
   }, [])
+  useEffect(() => {
+    if (!edges.length) return
+    if (edges.some((edge) => !edge.style?.stroke)) {
+      setEdges(edges as ArchitectureEdge[])
+    }
+  }, [edges, setEdges])
 
   const addNode = useMutation(({ storage }, node: ArchNode) => {
     const currentNodes = storage.get("nodes") ?? []
@@ -178,13 +201,16 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      const newEdgeId = `e-${connection.source}-${connection.target}-${Date.now()}`
+      const color = getEdgeColor(newEdgeId)
+
       const newEdge = {
         ...connection,
-        id: `e-${connection.source}-${connection.target}-${Date.now()}`,
+        id: newEdgeId,
         type: "smoothstep",
         animated: false,
-        style: { stroke: "#6366f1", strokeWidth: 2 },
-        data: { label: "" },
+        style: { stroke: color, strokeWidth: 2 },
+        data: { label: "", color },
       } as ArchitectureEdge
       setEdges(addEdge(newEdge, edges as ArchitectureEdge[]))
     },
@@ -482,7 +508,7 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
               colorMode="dark"
               defaultEdgeOptions={{
                 type: "smoothstep",
-                style: { stroke: "#8b5cf6", strokeWidth: 1.5 },
+                style: { strokeWidth: 1.5 },
                 animated: false,
               }}
               proOptions={{ hideAttribution: true }}

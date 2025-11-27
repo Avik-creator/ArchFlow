@@ -15,6 +15,7 @@ import {
   type Connection,
   addEdge,
 } from "@xyflow/react"
+import { getEdgeColor } from "@/lib/utils"
 
 interface ArchitectureStore {
   nodes: ArchitectureNode[]
@@ -50,6 +51,23 @@ interface ArchitectureStore {
   clearSimulationSteps: () => void
 }
 
+const EDGE_STROKE_WIDTH = 2
+
+const enhanceEdges = (edges: ArchitectureEdge[]) =>
+  edges.map((edge, index) => {
+    const key = edge.id ?? `${edge.source ?? "edge"}-${edge.target ?? "edge"}-${index}`
+    const color = (edge.data?.color as string | undefined) ?? getEdgeColor(key)
+    return {
+      ...edge,
+      style: {
+        ...edge.style,
+        stroke: color,
+        strokeWidth: edge.style?.strokeWidth ?? EDGE_STROKE_WIDTH,
+      },
+      data: { ...edge.data, color },
+    }
+  })
+
 export const useArchitectureStore = create<ArchitectureStore>()(
   persist(
     (set, get) => ({
@@ -66,7 +84,7 @@ export const useArchitectureStore = create<ArchitectureStore>()(
       },
 
       setNodes: (nodes) => set({ nodes }),
-      setEdges: (edges) => set({ edges }),
+      setEdges: (edges) => set({ edges: enhanceEdges(edges) }),
 
       onNodesChange: (changes) => {
         set({
@@ -76,23 +94,29 @@ export const useArchitectureStore = create<ArchitectureStore>()(
 
       onEdgesChange: (changes) => {
         set({
-          edges: applyEdgeChanges(changes, get().edges),
+          edges: enhanceEdges(applyEdgeChanges(changes, get().edges)),
         })
       },
 
       onConnect: (connection) => {
-        set({
-          edges: addEdge(
-            {
-              ...connection,
-              type: "smoothstep",
-              animated: false,
-              style: { stroke: "#6366f1", strokeWidth: 2 },
-              data: { label: "" },
-            },
-            get().edges,
-          ),
-        })
+    const edgeId = `e-${connection.source ?? "unknown"}-${connection.target ?? "unknown"}-${Date.now()}`
+    const color = getEdgeColor(edgeId)
+
+    set({
+      edges: enhanceEdges(
+        addEdge(
+          {
+            ...connection,
+            id: edgeId,
+            type: "smoothstep",
+            animated: false,
+            style: { stroke: color, strokeWidth: 2 },
+            data: { label: "", color },
+          },
+          get().edges,
+        ),
+      ),
+    })
       },
 
       addNode: (node) => {
