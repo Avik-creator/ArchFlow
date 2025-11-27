@@ -398,6 +398,25 @@ export default function Home() {
             <span>ArchFlow</span>
           </div>
           <p className="text-center">Privacy-first architecture design tool. No data collection.</p>
+          <div className="flex items-center gap-4 text-xs md:text-sm">
+            <Link
+              href="https://x.com/avikm744"
+              target="_blank"
+              rel="noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              @avikm744
+            </Link>
+            <span className="hidden md:inline text-muted-foreground/50">•</span>
+            <Link
+              href="https://peerlist.io/avikmukherjee"
+              target="_blank"
+              rel="noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              peerlist.io/avikmukherjee
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
