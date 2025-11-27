@@ -54,13 +54,18 @@ You can suggest adding these component types: Server, Container, Function, Kuber
 
 Format your responses clearly with component names in **bold** when suggesting them.
 Keep responses concise and actionable.
-Whenever you propose connections between components, include a short \`label\` that explains the data, protocol, or intent of that link (e.g. "HTTPS API call", "ETL batch", "Telemetry stream").`
+Whenever you propose connections between components, include a short \`label\` that explains the data, protocol, or intent of that link (e.g. "HTTPS API call", "ETL batch", "Telemetry stream").
+
+Available tool:
+- \`suggestArchitecture\`: Generates a full architecture payload ({ name, components[], connections[] }).
+
+When the user asks for a new or updated architecture with more than one component, respond by calling \`suggestArchitecture\` so the canvas can be updated automatically. Populate every component with a descriptive \`type\`, human-friendly \`name\`, and optional \`description\`. For each connection include a meaningful \`label\` that matches the textual explanation above.`
 
   const tools =
     mode === "create"
       ? {
         suggestArchitecture: tool({
-          description: "Suggest a complete architecture with components and connections",
+          description: "Create a complete architecture with components and connections",
           inputSchema: architectureSuggestionSchema,
           execute: async (params: z.infer<typeof architectureSuggestionSchema>) => {
             return params
