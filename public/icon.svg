@@ -1,0 +1,28 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @media (prefers-color-scheme: light) {
+      .background { fill: black; }
+      .foreground { fill: white; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .background { fill: white; }
+      .foreground { fill: black; }
+    }
+  </style>
+  <g clip-path="url(#clip0_7960_43945)">
+    <rect class="background" width="180" height="180" rx="37" fill="#0a0a0a"/>
+    <g style="transform: scale(95%); transform-origin: center">
+      <!-- Top layer -->
+      <path d="M50 0L100 25L50 50L0 25L50 0Z" stroke="#10b981" stroke-width="6" fill="none" stroke-linejoin="round"/>
+      <!-- Middle layer -->
+      <path d="M0 45L50 70L100 45" stroke="#10b981" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Bottom layer -->
+      <path d="M0 65L50 90L100 65" stroke="#10b981" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <defs>
+    <clipPath id="clip0_7960_43945">
+      <rect width="180" height="180" fill="white" />
+    </clipPath>
+  </defs>
+</svg>
