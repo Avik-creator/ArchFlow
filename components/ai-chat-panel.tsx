@@ -153,7 +153,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
       ) : (
         <>
           {/* Header */}
-          <div className="flex flex-col border-b border-border/50 flex-shrink-0">
+          <div className="flex flex-col border-b border-border/50 shrink-0">
             <div className="flex items-center justify-between px-3 py-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -261,16 +261,28 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                           </div>
                         )
                       }
-                      if (
-                        part.type === "tool-invocation" &&
-                        part.toolInvocation.toolName === "suggestArchitecture" &&
-                        part.toolInvocation.state === "result"
-                      ) {
-                        const suggestion = part.toolInvocation.result as {
-                          name: string
-                          components: Array<{ type: string; name: string; description?: string }>
-                          connections: Array<{ from: string; to: string; label?: string }>
-                        }
+                      const legacyToolInvocation =
+                        part.type === "tool-invocation"
+                          ? (part as { toolInvocation?: { toolName?: string; state?: string; result?: unknown } }).toolInvocation
+                          : undefined
+                      const isLegacyToolPart =
+                        legacyToolInvocation?.toolName === "suggestArchitecture" &&
+                        legacyToolInvocation?.state === "result"
+                      const isNewToolPart =
+                        (part.type === "tool-suggestArchitecture" || (part.type === "dynamic-tool" && part.toolName === "suggestArchitecture")) &&
+                        part.state === "output-available" &&
+                        "output" in part &&
+                        !!part.output &&
+                        (part as { preliminary?: boolean }).preliminary !== true
+
+                      if (isLegacyToolPart || isNewToolPart) {
+                        const suggestion = (isLegacyToolPart
+                          ? (legacyToolInvocation!.result as unknown)
+                          : (part as { output: unknown }).output) as {
+                            name: string
+                            components: Array<{ type: string; name: string; description?: string }>
+                            connections: Array<{ from: string; to: string; label?: string }>
+                          }
                         return (
                           <div key={index} className="mt-2 p-2 rounded bg-background/50 border border-border/50">
                             <p className="text-[10px] text-muted-foreground mb-1.5">
@@ -310,7 +322,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="border-t border-border/50 p-2 flex-shrink-0">
+          <form onSubmit={handleSubmit} className="border-t border-border/50 p-2 shrink-0">
             <div className="flex gap-1.5">
               <Textarea
                 value={input}

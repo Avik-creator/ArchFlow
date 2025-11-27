@@ -1,7 +1,26 @@
 import { convertToModelMessages, streamText, tool, type UIMessage } from "ai"
+import { groq } from "@ai-sdk/groq"
 import { z } from "zod"
 
-export const maxDuration = 30
+const architectureSuggestionSchema = z.object({
+  name: z.string().describe("Name of the architecture"),
+  components: z.array(
+    z.object({
+      type: z.string().describe("Component type like server, database, loadbalancer"),
+      name: z.string().describe("Label for the component"),
+      description: z.string().optional(),
+    }),
+  ),
+  connections: z.array(
+    z.object({
+      from: z.string().describe("Source component name"),
+      to: z.string().describe("Target component name"),
+      label: z.string().optional(),
+    }),
+  ),
+})
+
+export const maxDuration = 45
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json()
@@ -39,34 +58,18 @@ Keep responses concise and actionable.`
   const tools =
     mode === "create"
       ? {
-          suggestArchitecture: tool({
-            description: "Suggest a complete architecture with components and connections",
-            parameters: z.object({
-              name: z.string().describe("Name of the architecture"),
-              components: z.array(
-                z.object({
-                  type: z.string().describe("Component type like server, database, loadbalancer"),
-                  name: z.string().describe("Label for the component"),
-                  description: z.string().optional(),
-                }),
-              ),
-              connections: z.array(
-                z.object({
-                  from: z.string().describe("Source component name"),
-                  to: z.string().describe("Target component name"),
-                  label: z.string().optional(),
-                }),
-              ),
-            }),
-            execute: async (params) => {
-              return params
-            },
-          }),
-        }
+        suggestArchitecture: tool({
+          description: "Suggest a complete architecture with components and connections",
+          inputSchema: architectureSuggestionSchema,
+          execute: async (params: z.infer<typeof architectureSuggestionSchema>) => {
+            return params
+          },
+        }),
+      }
       : undefined
 
   const result = streamText({
-    model: "anthropic/claude-sonnet-4-20250514",
+    model: groq("moonshotai/kimi-k2-instruct-0905"),
     system: systemPrompt,
     messages: prompt,
     tools,

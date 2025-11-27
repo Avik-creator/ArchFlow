@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^2.0.32",
     "@ai-sdk/react": "latest",
     "@hookform/resolvers": "^3.10.0",
     "@liveblocks/client": "latest",
