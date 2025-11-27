@@ -101,6 +101,9 @@ export const useArchitectureStore = create<ArchitectureStore>()(
       onConnect: (connection) => {
     const edgeId = `e-${connection.source ?? "unknown"}-${connection.target ?? "unknown"}-${Date.now()}`
     const color = getEdgeColor(edgeId)
+    const labelFromData = typeof connection.data?.label === "string" ? connection.data.label : ""
+    const labelFromConnection = typeof connection.label === "string" ? connection.label : ""
+    const label = labelFromConnection || labelFromData
 
     set({
       edges: enhanceEdges(
@@ -110,8 +113,9 @@ export const useArchitectureStore = create<ArchitectureStore>()(
             id: edgeId,
             type: "smoothstep",
             animated: false,
+            label,
             style: { stroke: color, strokeWidth: 2 },
-            data: { label: "", color },
+            data: { label, color },
           },
           get().edges,
         ),

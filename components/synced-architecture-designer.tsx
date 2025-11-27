@@ -203,14 +203,18 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
     (connection: Connection) => {
       const newEdgeId = `e-${connection.source}-${connection.target}-${Date.now()}`
       const color = getEdgeColor(newEdgeId)
+      const labelFromData = typeof connection.data?.label === "string" ? connection.data.label : ""
+      const labelFromConnection = typeof connection.label === "string" ? connection.label : ""
+      const label = labelFromConnection || labelFromData
 
       const newEdge = {
         ...connection,
         id: newEdgeId,
         type: "smoothstep",
         animated: false,
+        label,
         style: { stroke: color, strokeWidth: 2 },
-        data: { label: "", color },
+        data: { label, color },
       } as ArchitectureEdge
       setEdges(addEdge(newEdge, edges as ArchitectureEdge[]))
     },

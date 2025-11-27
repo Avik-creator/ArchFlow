@@ -2,14 +2,18 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import type { Connection } from "@xyflow/react"
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import { DefaultChatTransport, type UIMessage } from "ai"
 import { Bot, Send, X, Sparkles, Loader2, Trash2, MessageSquare, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { useArchitectureStore } from "@/lib/architecture-store"
 import { COMPONENT_LIBRARY } from "@/lib/architecture-types"
+import { useChatHistoryStore, type ChatMode } from "@/lib/chat-history-store"
+import ReactMarkdown, { type Components as MarkdownComponents } from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface AIChatPanelProps {
   isOpen: boolean
@@ -17,18 +21,83 @@ interface AIChatPanelProps {
   isMobile?: boolean
 }
 
-type AIMode = "understand" | "create"
+type AIMode = ChatMode
+
+const markdownComponents: MarkdownComponents = {
+  code({ inline, className, children, ...props }: any) {
+    if (inline) {
+      return (
+        <code className="rounded bg-muted px-1.5 py-0.5 text-[0.85em]" {...props}>
+          {children}
+        </code>
+      )
+    }
+    return (
+      <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/70 p-3 text-[0.85em]">
+        <code className={className}>{children}</code>
+      </pre>
+    )
+  },
+  a: ({ children, ...props }) => (
+    <a
+      {...props}
+      className="text-primary underline decoration-dotted underline-offset-2 hover:text-primary/80"
+      target="_blank"
+      rel="noreferrer"
+    >
+      {children}
+    </a>
+  ),
+  table: ({ children }) => <div className="my-3 overflow-x-auto rounded border border-border/60">{children}</div>,
+  th: ({ children, ...props }) => (
+    <th {...props} className="border border-border/60 bg-muted/40 px-2 py-1 text-left text-[0.85em] font-semibold">
+      {children}
+    </th>
+  ),
+  td: ({ children, ...props }) => (
+    <td {...props} className="border border-border/60 px-2 py-1 text-[0.85em]">
+      {children}
+    </td>
+  ),
+  ul: ({ children, ...props }) => (
+    <ul {...props} className="list-disc pl-5">
+      {children}
+    </ul>
+  ),
+  ol: ({ children, ...props }) => (
+    <ol {...props} className="list-decimal pl-5">
+      {children}
+    </ol>
+  ),
+}
+
+function MarkdownMessage({ text }: { text: string }) {
+  return (
+    <div className="prose prose-invert text-xs leading-relaxed prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-headings:mt-3 prose-headings:mb-2 prose-pre:my-2">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {text}
+      </ReactMarkdown>
+    </div>
+  )
+}
 
 export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
   const [input, setInput] = useState("")
   const [mode, setMode] = useState<AIMode>("create")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { nodes, edges, addNode, onConnect } = useArchitectureStore()
+  const { histories, setHistory, clearHistory } = useChatHistoryStore()
+  const historyForMode = histories[mode] ?? []
 
   const { messages, sendMessage, status, setMessages } = useChat({
+    id: `archflow-${mode}`,
+    messages: historyForMode,
     transport: new DefaultChatTransport({
       api: `/api/chat?mode=${mode}`,
     }),
+    onFinish: ({ messages: updatedMessages }) => {
+      setHistory(mode, updatedMessages)
+    },
   })
 
   const isLoading = status === "streaming" || status === "submitted"
@@ -36,10 +105,6 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
-
-  useEffect(() => {
-    setMessages([])
-  }, [mode, setMessages])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,7 +181,8 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
             target: targetId,
             sourceHandle: null,
             targetHandle: null,
-          })
+            label: conn.label || `${conn.from}→${conn.to}`,
+          } as Connection)
         }
       })
     }, 100)
@@ -129,6 +195,12 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
     "Suggest improvements",
     "Security review",
   ]
+
+  const handleModeChange = (nextMode: AIMode) => {
+    if (nextMode === mode) return
+    setHistory(mode, messages)
+    setMode(nextMode)
+  }
 
   return (
     <div
@@ -164,7 +236,10 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 text-muted-foreground"
-                  onClick={() => setMessages([])}
+                  onClick={() => {
+                    setMessages([])
+                    clearHistory(mode)
+                  }}
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -176,7 +251,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
 
             <div className="flex gap-1 px-3 pb-2">
               <button
-                onClick={() => setMode("create")}
+                onClick={() => handleModeChange("create")}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   mode === "create"
@@ -188,7 +263,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                 Create
               </button>
               <button
-                onClick={() => setMode("understand")}
+                onClick={() => handleModeChange("understand")}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   mode === "understand"
@@ -255,11 +330,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                         if (message.role === "user" && displayText.includes("[DIAGRAM CONTEXT]")) {
                           displayText = displayText.split("[USER QUESTION]")[1]?.trim() || displayText
                         }
-                        return (
-                          <div key={index} className="whitespace-pre-wrap">
-                            {displayText}
-                          </div>
-                        )
+                        return <MarkdownMessage key={index} text={displayText} />
                       }
                       const legacyToolInvocation =
                         part.type === "tool-invocation"

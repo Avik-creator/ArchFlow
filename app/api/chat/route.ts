@@ -53,7 +53,8 @@ When users describe what they want to build, provide specific actionable suggest
 You can suggest adding these component types: Server, Container, Function, Kubernetes, VM, Database, NoSQL DB, Cache, Object Storage, File System, Load Balancer, API Gateway, CDN, Firewall, DNS, User, Browser, Mobile App, IoT Device, AWS, GCP, Azure, Cloud, Queue, Event Bus, Pub/Sub, Webhook, HTTP Request, REST API, GraphQL, WebSocket.
 
 Format your responses clearly with component names in **bold** when suggesting them.
-Keep responses concise and actionable.`
+Keep responses concise and actionable.
+Whenever you propose connections between components, include a short \`label\` that explains the data, protocol, or intent of that link (e.g. "HTTPS API call", "ETL batch", "Telemetry stream").`
 
   const tools =
     mode === "create"
