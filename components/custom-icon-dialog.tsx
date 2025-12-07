@@ -206,9 +206,12 @@ export function CustomIconDialog({ trigger }: CustomIconDialogProps) {
                       setPreviewError(false);
                     }}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Tip: Use simpleicons.org - format:
-                    https://cdn.simpleicons.org/[name]/[color]
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    Tip: Use simpleicons.org format:
+                    <br />
+                    <code className="text-[10px] bg-muted px-1 py-0.5 rounded">
+                      cdn.simpleicons.org/[name]/[color]
+                    </code>
                   </p>
                 </div>
 

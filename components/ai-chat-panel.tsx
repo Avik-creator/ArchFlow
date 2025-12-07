@@ -1,42 +1,60 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useRef, useEffect } from "react"
-import type { Connection } from "@xyflow/react"
-import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport, type UIMessage } from "ai"
-import { Bot, Send, X, Sparkles, Loader2, Trash2, MessageSquare, Wand2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
-import { useArchitectureStore } from "@/lib/architecture-store"
-import { COMPONENT_LIBRARY } from "@/lib/architecture-types"
-import { useChatHistoryStore, type ChatMode } from "@/lib/chat-history-store"
-import ReactMarkdown, { type Components as MarkdownComponents } from "react-markdown"
-import remarkGfm from "remark-gfm"
+import type React from "react";
+import { useState, useRef, useEffect } from "react";
+import type { Connection } from "@xyflow/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import {
+  Bot,
+  Send,
+  X,
+  Sparkles,
+  Loader2,
+  Trash2,
+  MessageSquare,
+  Wand2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { useArchitectureStore } from "@/lib/architecture-store";
+import { COMPONENT_LIBRARY } from "@/lib/architecture-types";
+import {
+  useCustomIconsStore,
+  customIconToComponent,
+} from "@/lib/custom-icons-store";
+import { useChatHistoryStore, type ChatMode } from "@/lib/chat-history-store";
+import ReactMarkdown, {
+  type Components as MarkdownComponents,
+} from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface AIChatPanelProps {
-  isOpen: boolean
-  onToggle: () => void
-  isMobile?: boolean
+  isOpen: boolean;
+  onToggle: () => void;
+  isMobile?: boolean;
 }
 
-type AIMode = ChatMode
+type AIMode = ChatMode;
 
 const markdownComponents: MarkdownComponents = {
   code({ inline, className, children, ...props }: any) {
     if (inline) {
       return (
-        <code className="rounded bg-muted px-1.5 py-0.5 text-[0.85em]" {...props}>
+        <code
+          className="rounded bg-muted px-1.5 py-0.5 text-[0.85em]"
+          {...props}
+        >
           {children}
         </code>
-      )
+      );
     }
     return (
       <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/70 p-3 text-[0.85em]">
         <code className={className}>{children}</code>
       </pre>
-    )
+    );
   },
   a: ({ children, ...props }) => (
     <a
@@ -48,9 +66,16 @@ const markdownComponents: MarkdownComponents = {
       {children}
     </a>
   ),
-  table: ({ children }) => <div className="my-3 overflow-x-auto rounded border border-border/60">{children}</div>,
+  table: ({ children }) => (
+    <div className="my-3 overflow-x-auto rounded border border-border/60">
+      {children}
+    </div>
+  ),
   th: ({ children, ...props }) => (
-    <th {...props} className="border border-border/60 bg-muted/40 px-2 py-1 text-left text-[0.85em] font-semibold">
+    <th
+      {...props}
+      className="border border-border/60 bg-muted/40 px-2 py-1 text-left text-[0.85em] font-semibold"
+    >
       {children}
     </th>
   ),
@@ -69,25 +94,35 @@ const markdownComponents: MarkdownComponents = {
       {children}
     </ol>
   ),
-}
+};
 
 function MarkdownMessage({ text }: { text: string }) {
   return (
     <div className="prose prose-invert text-xs leading-relaxed prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-headings:mt-3 prose-headings:mb-2 prose-pre:my-2">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={markdownComponents}
+      >
         {text}
       </ReactMarkdown>
     </div>
-  )
+  );
 }
 
 export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
-  const [input, setInput] = useState("")
-  const [mode, setMode] = useState<AIMode>("create")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { nodes, edges, addNode, onConnect } = useArchitectureStore()
-  const { histories, setHistory, clearHistory } = useChatHistoryStore()
-  const historyForMode = histories[mode] ?? []
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState<AIMode>("create");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { nodes, edges, addNode, onConnect } = useArchitectureStore();
+  const { icons: customIcons } = useCustomIconsStore();
+  const { histories, setHistory, clearHistory } = useChatHistoryStore();
+  const historyForMode = histories[mode] ?? [];
+
+  // Merge built-in and custom components
+  const allComponents = [
+    ...COMPONENT_LIBRARY,
+    ...customIcons.map(customIconToComponent),
+  ];
 
   const { messages, sendMessage, status, setMessages } = useChat({
     id: `archflow-${mode}`,
@@ -96,21 +131,30 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
       api: `/api/chat?mode=${mode}`,
     }),
     onFinish: ({ messages: updatedMessages }) => {
-      setHistory(mode, updatedMessages)
+      setHistory(mode, updatedMessages);
     },
-  })
+  });
 
-  const isLoading = status === "streaming" || status === "submitted"
+  const isLoading = status === "streaming" || status === "submitted";
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading) return
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-    let messageText = input
+    let messageText = input;
+
+    // Add custom icons context for create mode
+    if (mode === "create" && customIcons.length > 0) {
+      const customComponentsList = customIcons
+        .map((icon) => `${icon.name} (${icon.category})`)
+        .join(", ");
+      messageText = `[ADDITIONAL COMPONENTS AVAILABLE]\n${customComponentsList}\n\n[USER REQUEST]\n${input}`;
+    }
+
     if (mode === "understand" && nodes.length > 0) {
       const diagramContext = JSON.stringify({
         nodes: nodes.map((n) => ({
@@ -125,41 +169,61 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
           to: nodes.find((n) => n.id === e.target)?.data.label,
           label: e.label,
         })),
-      })
-      messageText = `[DIAGRAM CONTEXT]\n${diagramContext}\n\n[USER QUESTION]\n${input}`
+      });
+      messageText = `[DIAGRAM CONTEXT]\n${diagramContext}\n\n[USER QUESTION]\n${input}`;
     }
 
-    sendMessage({ text: messageText })
-    setInput("")
-  }
+    sendMessage({ text: messageText });
+    setInput("");
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit(e)
+      e.preventDefault();
+      handleSubmit(e);
     }
-  }
+  };
 
   const applyArchitectureSuggestion = (suggestion: {
-    components: Array<{ type: string; name: string; description?: string }>
-    connections: Array<{ from: string; to: string; label?: string }>
+    components: Array<{ type: string; name: string; description?: string }>;
+    connections: Array<{ from: string; to: string; label?: string }>;
   }) => {
-    const nodeMap: Record<string, string> = {}
-    const xPos = 100
-    const yPos = 100
+    const nodeMap: Record<string, string> = {};
+
+    // Calculate starting position based on existing nodes
+    const existingNodes = nodes;
+    const startX =
+      existingNodes.length > 0
+        ? Math.max(...existingNodes.map((n) => n.position.x)) + 300
+        : 100;
+    const startY = 100;
+
+    // Better spacing to prevent overlapping - generous spacing
+    const horizontalSpacing = 280; // Space between node centers horizontally
+    const verticalSpacing = 180; // Space between node centers vertically
+    const nodesPerRow = 3; // Nodes per row for better readability
 
     suggestion.components.forEach((comp, index) => {
-      const componentDef = COMPONENT_LIBRARY.find(
-        (c) => c.id === comp.type.toLowerCase() || c.name.toLowerCase() === comp.type.toLowerCase(),
-      )
+      const componentDef = allComponents.find(
+        (c) =>
+          c.id === comp.type.toLowerCase() ||
+          c.name.toLowerCase() === comp.type.toLowerCase()
+      );
       if (componentDef) {
-        const nodeId = `${componentDef.id}-${Date.now()}-${index}`
-        nodeMap[comp.name] = nodeId
+        const nodeId = `${componentDef.id}-${Date.now()}-${index}`;
+        nodeMap[comp.name] = nodeId;
+
+        // Calculate position with proper spacing
+        const col = index % nodesPerRow;
+        const row = Math.floor(index / nodesPerRow);
 
         addNode({
           id: nodeId,
           type: "architecture",
-          position: { x: xPos + (index % 4) * 200, y: yPos + Math.floor(index / 4) * 150 },
+          position: {
+            x: startX + col * horizontalSpacing,
+            y: startY + row * verticalSpacing,
+          },
           data: {
             label: comp.name,
             component: componentDef,
@@ -167,40 +231,45 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
             dummyData: "",
             transformationType: "passthrough",
           },
-        })
+        });
       }
-    })
+    });
 
     setTimeout(() => {
       suggestion.connections.forEach((conn) => {
-        const sourceId = nodeMap[conn.from]
-        const targetId = nodeMap[conn.to]
+        const sourceId = nodeMap[conn.from];
+        const targetId = nodeMap[conn.to];
         if (sourceId && targetId) {
           onConnect({
             source: sourceId,
             target: targetId,
             sourceHandle: null,
             targetHandle: null,
-            label: conn.label || `${conn.from}→${conn.to}`,
-          } as Connection)
+            label: conn.label || "",
+          } as Connection);
         }
-      })
-    }, 100)
-  }
+      });
+    }, 100);
+  };
 
-  const createModePrompts = ["Microservices backend", "Serverless API", "Real-time chat", "E-commerce platform"]
+  const createModePrompts = [
+    "Microservices backend",
+    "Serverless API",
+    "Real-time chat",
+    "E-commerce platform",
+  ];
   const understandModePrompts = [
     "Explain this architecture",
     "Find bottlenecks",
     "Suggest improvements",
     "Security review",
-  ]
+  ];
 
   const handleModeChange = (nextMode: AIMode) => {
-    if (nextMode === mode) return
-    setHistory(mode, messages)
-    setMode(nextMode)
-  }
+    if (nextMode === mode) return;
+    setHistory(mode, messages);
+    setMode(nextMode);
+  };
 
   return (
     <div
@@ -211,8 +280,8 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
             ? "inset-2 h-auto w-auto"
             : "right-2 bottom-2 h-10 w-10"
           : isOpen
-            ? "right-4 bottom-4 h-[480px] w-[360px]"
-            : "right-4 bottom-4 h-10 w-10",
+          ? "right-4 bottom-4 h-[480px] w-[360px]"
+          : "right-4 bottom-4 h-10 w-10"
       )}
     >
       {!isOpen ? (
@@ -237,13 +306,18 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                   size="icon"
                   className="h-6 w-6 text-muted-foreground"
                   onClick={() => {
-                    setMessages([])
-                    clearHistory(mode)
+                    setMessages([]);
+                    clearHistory(mode);
                   }}
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={onToggle}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground"
+                  onClick={onToggle}
+                >
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -256,7 +330,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                   "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   mode === "create"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-muted-foreground hover:text-foreground",
+                    : "bg-muted/50 text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Wand2 className="h-3 w-3" />
@@ -268,7 +342,7 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                   "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   mode === "understand"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-muted-foreground hover:text-foreground",
+                    : "bg-muted/50 text-muted-foreground hover:text-foreground"
                 )}
               >
                 <MessageSquare className="h-3 w-3" />
@@ -292,11 +366,14 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                   {mode === "create"
                     ? "Describe what you want to build"
                     : nodes.length > 0
-                      ? "Ask questions about your diagram"
-                      : "Add components to analyze"}
+                    ? "Ask questions about your diagram"
+                    : "Add components to analyze"}
                 </p>
                 <div className="flex flex-wrap gap-1.5 justify-center">
-                  {(mode === "create" ? createModePrompts : understandModePrompts).map((prompt) => (
+                  {(mode === "create"
+                    ? createModePrompts
+                    : understandModePrompts
+                  ).map((prompt) => (
                     <button
                       key={prompt}
                       onClick={() => setInput(prompt)}
@@ -311,7 +388,10 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
               messages.map((message) => (
                 <div
                   key={message.id}
-                  className={cn("flex gap-2", message.role === "user" ? "justify-end" : "justify-start")}
+                  className={cn(
+                    "flex gap-2",
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  )}
                 >
                   {message.role === "assistant" && (
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -321,55 +401,91 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
                   <div
                     className={cn(
                       "max-w-[85%] rounded-lg px-3 py-2 text-xs",
-                      message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
                     )}
                   >
                     {message.parts.map((part, index) => {
                       if (part.type === "text") {
-                        let displayText = part.text
-                        if (message.role === "user" && displayText.includes("[DIAGRAM CONTEXT]")) {
-                          displayText = displayText.split("[USER QUESTION]")[1]?.trim() || displayText
+                        let displayText = part.text;
+                        if (
+                          message.role === "user" &&
+                          displayText.includes("[DIAGRAM CONTEXT]")
+                        ) {
+                          displayText =
+                            displayText.split("[USER QUESTION]")[1]?.trim() ||
+                            displayText;
                         }
-                        return <MarkdownMessage key={index} text={displayText} />
+                        return (
+                          <MarkdownMessage key={index} text={displayText} />
+                        );
                       }
                       const legacyToolInvocation =
                         part.type === "tool-invocation"
-                          ? (part as { toolInvocation?: { toolName?: string; state?: string; result?: unknown } }).toolInvocation
-                          : undefined
+                          ? (
+                              part as {
+                                toolInvocation?: {
+                                  toolName?: string;
+                                  state?: string;
+                                  result?: unknown;
+                                };
+                              }
+                            ).toolInvocation
+                          : undefined;
                       const isLegacyToolPart =
-                        legacyToolInvocation?.toolName === "suggestArchitecture" &&
-                        legacyToolInvocation?.state === "result"
+                        legacyToolInvocation?.toolName ===
+                          "suggestArchitecture" &&
+                        legacyToolInvocation?.state === "result";
                       const isNewToolPart =
-                        (part.type === "tool-suggestArchitecture" || (part.type === "dynamic-tool" && part.toolName === "suggestArchitecture")) &&
+                        (part.type === "tool-suggestArchitecture" ||
+                          (part.type === "dynamic-tool" &&
+                            part.toolName === "suggestArchitecture")) &&
                         part.state === "output-available" &&
                         "output" in part &&
                         !!part.output &&
-                        (part as { preliminary?: boolean }).preliminary !== true
+                        (part as { preliminary?: boolean }).preliminary !==
+                          true;
 
                       if (isLegacyToolPart || isNewToolPart) {
-                        const suggestion = (isLegacyToolPart
-                          ? (legacyToolInvocation!.result as unknown)
-                          : (part as { output: unknown }).output) as {
-                            name: string
-                            components: Array<{ type: string; name: string; description?: string }>
-                            connections: Array<{ from: string; to: string; label?: string }>
-                          }
+                        const suggestion = (
+                          isLegacyToolPart
+                            ? (legacyToolInvocation!.result as unknown)
+                            : (part as { output: unknown }).output
+                        ) as {
+                          name: string;
+                          components: Array<{
+                            type: string;
+                            name: string;
+                            description?: string;
+                          }>;
+                          connections: Array<{
+                            from: string;
+                            to: string;
+                            label?: string;
+                          }>;
+                        };
                         return (
-                          <div key={index} className="mt-2 p-2 rounded bg-background/50 border border-border/50">
+                          <div
+                            key={index}
+                            className="mt-2 p-2 rounded bg-background/50 border border-border/50"
+                          >
                             <p className="text-[10px] text-muted-foreground mb-1.5">
                               {suggestion.components.length} components
                             </p>
                             <Button
                               size="sm"
                               className="w-full h-7 text-xs"
-                              onClick={() => applyArchitectureSuggestion(suggestion)}
+                              onClick={() =>
+                                applyArchitectureSuggestion(suggestion)
+                              }
                             >
                               Apply to Canvas
                             </Button>
                           </div>
-                        )
+                        );
                       }
-                      return null
+                      return null;
                     })}
                   </div>
                 </div>
@@ -393,17 +509,29 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="border-t border-border/50 p-2 shrink-0">
+          <form
+            onSubmit={handleSubmit}
+            className="border-t border-border/50 p-2 shrink-0"
+          >
             <div className="flex gap-1.5">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={mode === "create" ? "Describe your architecture..." : "Ask about your diagram..."}
+                placeholder={
+                  mode === "create"
+                    ? "Describe your architecture..."
+                    : "Ask about your diagram..."
+                }
                 className="min-h-[36px] max-h-[80px] resize-none text-xs bg-muted/30 border-border/50"
                 rows={1}
               />
-              <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={!input.trim() || isLoading}>
+              <Button
+                type="submit"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                disabled={!input.trim() || isLoading}
+              >
                 <Send className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -411,5 +539,5 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
         </>
       )}
     </div>
-  )
+  );
 }

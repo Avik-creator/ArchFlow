@@ -1,33 +1,35 @@
-import { convertToModelMessages, streamText, tool, type UIMessage } from "ai"
-import { groq } from "@ai-sdk/groq"
-import { z } from "zod"
+import { convertToModelMessages, streamText, tool, type UIMessage } from "ai";
+import { groq } from "@ai-sdk/groq";
+import { z } from "zod";
 
 const architectureSuggestionSchema = z.object({
   name: z.string().describe("Name of the architecture"),
   components: z.array(
     z.object({
-      type: z.string().describe("Component type like server, database, loadbalancer"),
+      type: z
+        .string()
+        .describe("Component type like server, database, loadbalancer"),
       name: z.string().describe("Label for the component"),
       description: z.string().optional(),
-    }),
+    })
   ),
   connections: z.array(
     z.object({
       from: z.string().describe("Source component name"),
       to: z.string().describe("Target component name"),
       label: z.string().optional(),
-    }),
+    })
   ),
-})
+});
 
-export const maxDuration = 45
+export const maxDuration = 45;
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json()
-  const url = new URL(req.url)
-  const mode = url.searchParams.get("mode") || "create"
+  const { messages }: { messages: UIMessage[] } = await req.json();
+  const url = new URL(req.url);
+  const mode = url.searchParams.get("mode") || "create";
 
-  const prompt = convertToModelMessages(messages)
+  const prompt = convertToModelMessages(messages);
 
   const systemPrompt =
     mode === "understand"
@@ -49,7 +51,9 @@ Keep responses helpful and actionable.`
 Help users design robust, scalable system architectures by suggesting components, connections, and best practices.
 
 **Available Components:**
-Server, Container, Function, Kubernetes, VM, Database, NoSQL DB, Cache, Object Storage, File System, Load Balancer, API Gateway, CDN, Firewall, DNS, User, Browser, Mobile App, IoT Device, AWS, GCP, Azure, Cloud, Queue, Event Bus, Pub/Sub, Webhook, HTTP Request, REST API, GraphQL, WebSocket
+Server, Docker, Lambda, Kubernetes, VM, PostgreSQL, MongoDB, Redis, S3, File System, Load Balancer, API Gateway, Cloudflare, Firewall, DNS, User, Browser, Mobile App, IoT Device, AWS, GCP, Azure, Cloud, RabbitMQ, Kafka, Pub/Sub, Webhook, HTTP Request, REST API, GraphQL, WebSocket
+
+**Note:** Users may have custom components. If the message includes [ADDITIONAL COMPONENTS AVAILABLE], use those component names/types as well when appropriate.
 
 **Response Guidelines:**
 1. **For architecture requests** (e.g., "design a system for...", "I need an architecture that..."): 
@@ -83,20 +87,23 @@ When user says "I need a web app with user login":
    - Connections with labels like "HTTPS requests", "JWT validation", "User credential lookup"
 2. Follow with brief text: "I've designed a scalable web architecture with **Load Balancer** for traffic distribution, **Auth Service** for secure login, and **Session Cache** for fast authentication checks."
 
-Keep responses concise. When requirements are unclear, ask targeted questions before suggesting architecture.`
+Keep responses concise. When requirements are unclear, ask targeted questions before suggesting architecture.`;
 
   const tools =
     mode === "create"
       ? {
-        suggestArchitecture: tool({
-          description: "Create a complete architecture with components and connections.",
-          inputSchema: architectureSuggestionSchema,
-          execute: async (params: z.infer<typeof architectureSuggestionSchema>) => {
-            return params
-          },
-        }),
-      }
-      : undefined
+          suggestArchitecture: tool({
+            description:
+              "Create a complete architecture with components and connections.",
+            inputSchema: architectureSuggestionSchema,
+            execute: async (
+              params: z.infer<typeof architectureSuggestionSchema>
+            ) => {
+              return params;
+            },
+          }),
+        }
+      : undefined;
 
   const result = streamText({
     model: groq("moonshotai/kimi-k2-instruct-0905"),
@@ -104,7 +111,7 @@ Keep responses concise. When requirements are unclear, ask targeted questions be
     messages: prompt,
     tools,
     abortSignal: req.signal,
-  })
+  });
 
-  return result.toUIMessageStreamResponse()
+  return result.toUIMessageStreamResponse();
 }

@@ -24,7 +24,7 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
         isSimulating && "border-emerald-500 shadow-md shadow-emerald-500/20",
         hasApiEnabled && !selected && !isSimulating && "border-emerald-500/40"
       )}
-      style={{ minWidth: 100 }}
+      style={{ minWidth: 120, maxWidth: 150 }}
     >
       {/* Glow effect for simulation */}
       {isSimulating && (
@@ -38,7 +38,7 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
       <Handle
         type="target"
         position={Position.Top}
-        className="!h-2.5 !w-2.5 !border-2 !border-background !bg-muted-foreground/50 !transition-all hover:!bg-primary"
+        className="h-2.5! w-2.5! border-2! border-background! bg-muted-foreground/50! transition-all! hover:bg-primary!"
         style={{ top: -5 }}
       />
 
@@ -47,7 +47,7 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
         type="target"
         position={Position.Left}
         id="left"
-        className="!h-2.5 !w-2.5 !border-2 !border-background !bg-muted-foreground/50 !transition-all hover:!bg-primary"
+        className="h-2.5! w-2.5! border-2! border-background! bg-muted-foreground/50! transition-all! hover:bg-primary!"
         style={{ left: -5 }}
       />
 
@@ -60,11 +60,7 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
           <img
             src={nodeData.component.iconUrl}
             alt={nodeData.component.name}
-            className="h-5 w-5"
-            style={{
-              filter: "brightness(0) saturate(100%)",
-              color: nodeData.component.color,
-            }}
+            className="h-5 w-5 object-contain"
           />
         ) : (
           IconComponent && (
@@ -78,10 +74,13 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
 
       {/* Label - Force white color for export visibility */}
       <p
-        className="text-xs font-medium text-center max-w-[90px] truncate"
+        className="text-xs font-medium text-center max-w-[120px] leading-tight"
         style={{ color: "#ffffff" }}
+        title={nodeData.label}
       >
-        {nodeData.label}
+        {nodeData.label.length > 18
+          ? `${nodeData.label.slice(0, 16)}...`
+          : nodeData.label}
       </p>
 
       {/* API Badge */}
@@ -96,7 +95,7 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
         type="source"
         position={Position.Right}
         id="right"
-        className="!h-2.5 !w-2.5 !border-2 !border-background !bg-muted-foreground/50 !transition-all hover:!bg-primary"
+        className="h-2.5! w-2.5! border-2! border-background! bg-muted-foreground/50! transition-all! hover:bg-primary!"
         style={{ right: -5 }}
       />
 
@@ -105,7 +104,7 @@ function ArchitectureNodeComponent({ data, id, selected }: NodeProps) {
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!h-2.5 !w-2.5 !border-2 !border-background !bg-muted-foreground/50 !transition-all hover:!bg-primary"
+        className="h-2.5! w-2.5! border-2! border-background! bg-muted-foreground/50! transition-all! hover:bg-primary!"
         style={{ bottom: -5 }}
       />
     </div>

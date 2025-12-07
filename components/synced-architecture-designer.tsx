@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useCallback, useRef, useState, useEffect } from "react"
+import type React from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -11,48 +11,61 @@ import {
   useReactFlow,
   ReactFlowProvider,
   type NodeTypes,
+  type EdgeTypes,
   type NodeChange,
   type EdgeChange,
   type Connection,
   applyNodeChanges,
   applyEdgeChanges,
   addEdge,
-} from "@xyflow/react"
-import "@xyflow/react/dist/style.css"
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
-import { useStorage, useMutation, useUpdateMyPresence, useOthers, useSelf } from "@/liveblocks.config"
-import { exportToPng, exportToSvg, exportToJson } from "@/lib/export-utils"
-import { ComponentSidebar } from "./component-sidebar"
-import { PropertiesPanel } from "./properties-panel"
-import { Toolbar } from "./toolbar"
-import { MobileToolbar } from "./mobile-toolbar"
-import { SimulationConsole } from "./simulation-console"
-import { AIChatPanel } from "./ai-chat-panel"
-import { ArchitectureNode } from "./nodes/architecture-node"
-import { CollaborationPanel } from "./collaboration-panel"
-import { ConnectionStatus } from "./collaboration-room"
-import { createSimulationRunner } from "@/lib/simulation-engine"
+import {
+  useStorage,
+  useMutation,
+  useUpdateMyPresence,
+  useOthers,
+  useSelf,
+} from "@/liveblocks.config";
+import { exportToPng, exportToSvg, exportToJson } from "@/lib/export-utils";
+import { ComponentSidebar } from "./component-sidebar";
+import { PropertiesPanel } from "./properties-panel";
+import { Toolbar } from "./toolbar";
+import { MobileToolbar } from "./mobile-toolbar";
+import { SimulationConsole } from "./simulation-console";
+import { AIChatPanel } from "./ai-chat-panel";
+import { ArchitectureNode } from "./nodes/architecture-node";
+import { LabeledEdge } from "./edges/labeled-edge";
+import { CollaborationPanel } from "./collaboration-panel";
+import { ConnectionStatus } from "./collaboration-room";
+import { createSimulationRunner } from "@/lib/simulation-engine";
 import type {
   ArchitectureComponent,
   NodeData,
   ArchitectureNode as ArchNode,
   ArchitectureEdge,
-} from "@/lib/architecture-types"
-import { cn, getEdgeColor } from "@/lib/utils"
-import { Menu, PanelRight, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+} from "@/lib/architecture-types";
+import { cn, getEdgeColor } from "@/lib/utils";
+import { Menu, PanelRight, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const nodeTypes: NodeTypes = {
   architecture: ArchitectureNode,
-}
+};
 
-const EDGE_STROKE_WIDTH = 2
+const edgeTypes: EdgeTypes = {
+  labeled: LabeledEdge,
+};
+
+const EDGE_STROKE_WIDTH = 2;
 
 const colorizeEdges = (edges: ArchitectureEdge[]) =>
   edges.map((edge, index) => {
-    const key = edge.id ?? `${edge.source ?? "edge"}-${edge.target ?? "edge"}-${index}`
-    const color = (edge.data?.color as string | undefined) ?? getEdgeColor(key)
+    const key =
+      edge.id ?? `${edge.source ?? "edge"}-${edge.target ?? "edge"}-${index}`;
+    const color = (edge.data?.color as string | undefined) ?? getEdgeColor(key);
     return {
       ...edge,
       style: {
@@ -61,151 +74,173 @@ const colorizeEdges = (edges: ArchitectureEdge[]) =>
         strokeWidth: edge.style?.strokeWidth ?? EDGE_STROKE_WIDTH,
       },
       data: { ...edge.data, color },
-    }
-  })
+    };
+  });
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
-  return isMobile
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+  return isMobile;
 }
 
 interface SyncedArchitectureDesignerInnerProps {
-  roomId: string
+  roomId: string;
 }
 
-function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerInnerProps) {
-  const reactFlowWrapper = useRef<HTMLDivElement>(null)
-  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow()
-  const isMobile = useIsMobile()
-  const updateMyPresence = useUpdateMyPresence()
-  const others = useOthers()
-  const self = useSelf()
+function SyncedArchitectureDesignerInner({
+  roomId,
+}: SyncedArchitectureDesignerInnerProps) {
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
+  const isMobile = useIsMobile();
+  const updateMyPresence = useUpdateMyPresence();
+  const others = useOthers();
+  const self = useSelf();
 
-  const nodes = useStorage((root) => root.nodes) ?? []
-  const edges = useStorage((root) => root.edges) ?? []
+  const nodes = useStorage((root) => root.nodes) ?? [];
+  const edges = useStorage((root) => root.edges) ?? [];
 
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
-  const [showGrid, setShowGrid] = useState(true)
-  const [consoleOpen, setConsoleOpen] = useState(false)
-  const [aiChatOpen, setAiChatOpen] = useState(false)
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
-  const [collabPanelOpen, setCollabPanelOpen] = useState(false)
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [collabPanelOpen, setCollabPanelOpen] = useState(false);
   const [simulation, setSimulation] = useState({
     isRunning: false,
     isPaused: false,
     currentNodeId: null as string | null,
     steps: [] as any[],
     speed: 1000,
-  })
+  });
 
   const setNodes = useMutation(({ storage }, newNodes: ArchNode[]) => {
-    storage.set("nodes", newNodes)
-  }, [])
+    storage.set("nodes", newNodes);
+  }, []);
 
   const setEdges = useMutation(({ storage }, newEdges: ArchitectureEdge[]) => {
-    storage.set("edges", colorizeEdges(newEdges))
-  }, [])
+    storage.set("edges", colorizeEdges(newEdges));
+  }, []);
   useEffect(() => {
-    if (!edges.length) return
+    if (!edges.length) return;
     if (edges.some((edge) => !edge.style?.stroke)) {
-      setEdges(edges as ArchitectureEdge[])
+      setEdges(edges as ArchitectureEdge[]);
     }
-  }, [edges, setEdges])
+  }, [edges, setEdges]);
 
   const addNode = useMutation(({ storage }, node: ArchNode) => {
-    const currentNodes = storage.get("nodes") ?? []
-    storage.set("nodes", [...currentNodes, node])
-  }, [])
+    const currentNodes = storage.get("nodes") ?? [];
+    storage.set("nodes", [...currentNodes, node]);
+  }, []);
 
-  const updateNodeData = useMutation(({ storage }, nodeId: string, data: Partial<NodeData>) => {
-    const currentNodes = storage.get("nodes") ?? []
-    const updatedNodes = currentNodes.map((n: ArchNode) =>
-      n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n,
-    )
-    storage.set("nodes", updatedNodes)
-  }, [])
+  const updateNodeData = useMutation(
+    ({ storage }, nodeId: string, data: Partial<NodeData>) => {
+      const currentNodes = storage.get("nodes") ?? [];
+      const updatedNodes = currentNodes.map((n: ArchNode) =>
+        n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
+      );
+      storage.set("nodes", updatedNodes);
+    },
+    []
+  );
 
-  const updateEdgeData = useMutation(({ storage }, edgeId: string, data: { label?: string }) => {
-    const currentEdges = storage.get("edges") ?? []
-    const updatedEdges = currentEdges.map((e: ArchitectureEdge) =>
-      e.id === edgeId ? { ...e, label: data.label, data: { ...e.data, ...data } } : e,
-    )
-    storage.set("edges", updatedEdges)
-  }, [])
+  const updateEdgeData = useMutation(
+    ({ storage }, edgeId: string, data: { label?: string }) => {
+      const currentEdges = storage.get("edges") ?? [];
+      const updatedEdges = currentEdges.map((e: ArchitectureEdge) =>
+        e.id === edgeId
+          ? { ...e, label: data.label, data: { ...e.data, ...data } }
+          : e
+      );
+      storage.set("edges", updatedEdges);
+    },
+    []
+  );
 
   const deleteNode = useMutation(({ storage }, nodeId: string) => {
-    const currentNodes = storage.get("nodes") ?? []
-    const currentEdges = storage.get("edges") ?? []
+    const currentNodes = storage.get("nodes") ?? [];
+    const currentEdges = storage.get("edges") ?? [];
     storage.set(
       "nodes",
-      currentNodes.filter((n: ArchNode) => n.id !== nodeId),
-    )
+      currentNodes.filter((n: ArchNode) => n.id !== nodeId)
+    );
     storage.set(
       "edges",
-      currentEdges.filter((e: ArchitectureEdge) => e.source !== nodeId && e.target !== nodeId),
-    )
-  }, [])
+      currentEdges.filter(
+        (e: ArchitectureEdge) => e.source !== nodeId && e.target !== nodeId
+      )
+    );
+  }, []);
 
   const deleteEdge = useMutation(({ storage }, edgeId: string) => {
-    const currentEdges = storage.get("edges") ?? []
+    const currentEdges = storage.get("edges") ?? [];
     storage.set(
       "edges",
-      currentEdges.filter((e: ArchitectureEdge) => e.id !== edgeId),
-    )
-  }, [])
+      currentEdges.filter((e: ArchitectureEdge) => e.id !== edgeId)
+    );
+  }, []);
 
   const clearCanvas = useMutation(({ storage }) => {
-    storage.set("nodes", [])
-    storage.set("edges", [])
-  }, [])
+    storage.set("nodes", []);
+    storage.set("edges", []);
+  }, []);
 
   useEffect(() => {
     if (isMobile && (selectedNodeId || selectedEdgeId)) {
-      setRightSidebarOpen(true)
+      setRightSidebarOpen(true);
     }
-  }, [isMobile, selectedNodeId, selectedEdgeId])
+  }, [isMobile, selectedNodeId, selectedEdgeId]);
 
   useEffect(() => {
     const resizeObserverErr = (e: ErrorEvent) => {
-      if (e.message === "ResizeObserver loop completed with undelivered notifications.") {
-        e.stopImmediatePropagation()
+      if (
+        e.message ===
+        "ResizeObserver loop completed with undelivered notifications."
+      ) {
+        e.stopImmediatePropagation();
       }
-    }
-    window.addEventListener("error", resizeObserverErr)
-    return () => window.removeEventListener("error", resizeObserverErr)
-  }, [])
+    };
+    window.addEventListener("error", resizeObserverErr);
+    return () => window.removeEventListener("error", resizeObserverErr);
+  }, []);
 
   const onNodesChange = useCallback(
     (changes: NodeChange<ArchNode>[]) => {
-      const updatedNodes = applyNodeChanges(changes, nodes as ArchNode[])
-      setNodes(updatedNodes)
+      const updatedNodes = applyNodeChanges(changes, nodes as ArchNode[]);
+      setNodes(updatedNodes);
     },
-    [nodes, setNodes],
-  )
+    [nodes, setNodes]
+  );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange<ArchitectureEdge>[]) => {
-      const updatedEdges = applyEdgeChanges(changes, edges as ArchitectureEdge[])
-      setEdges(updatedEdges)
+      const updatedEdges = applyEdgeChanges(
+        changes,
+        edges as ArchitectureEdge[]
+      );
+      setEdges(updatedEdges);
     },
-    [edges, setEdges],
-  )
+    [edges, setEdges]
+  );
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const newEdgeId = `e-${connection.source}-${connection.target}-${Date.now()}`
-      const color = getEdgeColor(newEdgeId)
-      const labelFromData = typeof connection.data?.label === "string" ? connection.data.label : ""
-      const labelFromConnection = typeof connection.label === "string" ? connection.label : ""
-      const label = labelFromConnection || labelFromData
+      const newEdgeId = `e-${connection.source}-${
+        connection.target
+      }-${Date.now()}`;
+      const color = getEdgeColor(newEdgeId);
+      const labelFromData =
+        typeof connection.data?.label === "string" ? connection.data.label : "";
+      const labelFromConnection =
+        typeof connection.label === "string" ? connection.label : "";
+      const label = labelFromConnection || labelFromData;
 
       const newEdge = {
         ...connection,
@@ -215,28 +250,28 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
         label,
         style: { stroke: color, strokeWidth: 2 },
         data: { label, color },
-      } as ArchitectureEdge
-      setEdges(addEdge(newEdge, edges as ArchitectureEdge[]))
+      } as ArchitectureEdge;
+      setEdges(addEdge(newEdge, edges as ArchitectureEdge[]));
     },
-    [edges, setEdges],
-  )
+    [edges, setEdges]
+  );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault()
-    event.dataTransfer.dropEffect = "move"
-  }, [])
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
-      event.preventDefault()
-      const componentData = event.dataTransfer.getData("application/json")
-      if (!componentData) return
+      event.preventDefault();
+      const componentData = event.dataTransfer.getData("application/json");
+      if (!componentData) return;
 
-      const component: ArchitectureComponent = JSON.parse(componentData)
+      const component: ArchitectureComponent = JSON.parse(componentData);
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
-      })
+      });
 
       const newNode: ArchNode = {
         id: `${component.id}-${Date.now()}`,
@@ -249,22 +284,28 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
           dummyData: "",
           transformationType: "passthrough",
         },
-      }
+      };
 
-      addNode(newNode)
-      if (isMobile) setLeftSidebarOpen(false)
+      addNode(newNode);
+      if (isMobile) setLeftSidebarOpen(false);
     },
-    [screenToFlowPosition, addNode, isMobile],
-  )
+    [screenToFlowPosition, addNode, isMobile]
+  );
 
-  const handleDragStart = (event: React.DragEvent, component: ArchitectureComponent) => {
-    event.dataTransfer.setData("application/json", JSON.stringify(component))
-    event.dataTransfer.effectAllowed = "move"
-  }
+  const handleDragStart = (
+    event: React.DragEvent,
+    component: ArchitectureComponent
+  ) => {
+    event.dataTransfer.setData("application/json", JSON.stringify(component));
+    event.dataTransfer.effectAllowed = "move";
+  };
 
   const handleMobileAddComponent = useCallback(
     (component: ArchitectureComponent) => {
-      const position = { x: Math.random() * 200 + 100, y: Math.random() * 200 + 100 }
+      const position = {
+        x: Math.random() * 200 + 100,
+        y: Math.random() * 200 + 100,
+      };
       const newNode: ArchNode = {
         id: `${component.id}-${Date.now()}`,
         type: "architecture",
@@ -276,75 +317,115 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
           dummyData: "",
           transformationType: "passthrough",
         },
-      }
-      addNode(newNode)
-      setLeftSidebarOpen(false)
-      fitView({ padding: 0.2 })
+      };
+      addNode(newNode);
+      setLeftSidebarOpen(false);
+      fitView({ padding: 0.2 });
     },
-    [addNode, fitView],
-  )
+    [addNode, fitView]
+  );
 
   const handleDeleteSelected = useCallback(() => {
     if (selectedNodeId) {
-      deleteNode(selectedNodeId)
-      setSelectedNodeId(null)
+      deleteNode(selectedNodeId);
+      setSelectedNodeId(null);
     }
     if (selectedEdgeId) {
-      deleteEdge(selectedEdgeId)
-      setSelectedEdgeId(null)
+      deleteEdge(selectedEdgeId);
+      setSelectedEdgeId(null);
     }
-  }, [selectedNodeId, selectedEdgeId, deleteNode, deleteEdge])
+  }, [selectedNodeId, selectedEdgeId, deleteNode, deleteEdge]);
 
   const handleExportPng = useCallback(async () => {
-    const flowElement = document.querySelector(".react-flow") as HTMLElement
-    if (flowElement) await exportToPng(flowElement, "architecture-diagram")
-  }, [])
+    const flowElement = document.querySelector(".react-flow") as HTMLElement;
+    if (flowElement) await exportToPng(flowElement, "architecture-diagram");
+  }, []);
 
   const handleExportSvg = useCallback(async () => {
-    const flowElement = document.querySelector(".react-flow") as HTMLElement
-    if (flowElement) await exportToSvg(flowElement, "architecture-diagram")
-  }, [])
+    const flowElement = document.querySelector(".react-flow") as HTMLElement;
+    if (flowElement) await exportToSvg(flowElement, "architecture-diagram");
+  }, []);
 
   const handleExportJson = useCallback(() => {
-    exportToJson(nodes as ArchNode[], edges as ArchitectureEdge[], "architecture-diagram")
-  }, [nodes, edges])
+    exportToJson(
+      nodes as ArchNode[],
+      edges as ArchitectureEdge[],
+      "architecture-diagram"
+    );
+  }, [nodes, edges]);
 
   const handleStartSimulation = useCallback(() => {
-    if (nodes.length === 0) return
-    setSimulation((s) => ({ ...s, isRunning: true, isPaused: false, steps: [], currentNodeId: null }))
-    setConsoleOpen(true)
+    if (nodes.length === 0) return;
+    setSimulation((s) => ({
+      ...s,
+      isRunning: true,
+      isPaused: false,
+      steps: [],
+      currentNodeId: null,
+    }));
+    setConsoleOpen(true);
 
-    const runner = createSimulationRunner(nodes as ArchNode[], edges as ArchitectureEdge[], simulation.speed, {
-      onNodeEnter: (nodeId) => setSimulation((s) => ({ ...s, currentNodeId: nodeId })),
-      onNodeProcess: (nodeId, nodeName, input, output) => {
-        setSimulation((s) => ({
-          ...s,
-          steps: [...s.steps, { nodeId, nodeName, inputData: input, outputData: output, timestamp: Date.now() }],
-        }))
-      },
-      onComplete: () => setSimulation((s) => ({ ...s, isRunning: false, isPaused: false, currentNodeId: null })),
-      isPaused: () => simulation.isPaused,
-      isStopped: () => !simulation.isRunning,
-    })
-    runner.run()
-  }, [nodes, edges, simulation.speed, simulation.isPaused, simulation.isRunning])
+    const runner = createSimulationRunner(
+      nodes as ArchNode[],
+      edges as ArchitectureEdge[],
+      simulation.speed,
+      {
+        onNodeEnter: (nodeId) =>
+          setSimulation((s) => ({ ...s, currentNodeId: nodeId })),
+        onNodeProcess: (nodeId, nodeName, input, output) => {
+          setSimulation((s) => ({
+            ...s,
+            steps: [
+              ...s.steps,
+              {
+                nodeId,
+                nodeName,
+                inputData: input,
+                outputData: output,
+                timestamp: Date.now(),
+              },
+            ],
+          }));
+        },
+        onComplete: () =>
+          setSimulation((s) => ({
+            ...s,
+            isRunning: false,
+            isPaused: false,
+            currentNodeId: null,
+          })),
+        isPaused: () => simulation.isPaused,
+        isStopped: () => !simulation.isRunning,
+      }
+    );
+    runner.run();
+  }, [
+    nodes,
+    edges,
+    simulation.speed,
+    simulation.isPaused,
+    simulation.isRunning,
+  ]);
 
   // Track cursor position for collaboration
   const onPointerMove = useCallback(
     (event: React.PointerEvent) => {
-      const bounds = reactFlowWrapper.current?.getBoundingClientRect()
+      const bounds = reactFlowWrapper.current?.getBoundingClientRect();
       if (bounds) {
         updateMyPresence({
-          cursor: { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
-        })
+          cursor: {
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top,
+          },
+        });
       }
     },
-    [updateMyPresence],
-  )
+    [updateMyPresence]
+  );
 
   const onPointerLeave = useCallback(() => {
-    updateMyPresence({ cursor: null })
-  }, [updateMyPresence])
+    updateMyPresence({ cursor: null });
+  }, [updateMyPresence]);
 
   // Provide store-like interface for PropertiesPanel
   const storeInterface = {
@@ -361,9 +442,10 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
     startSimulation: handleStartSimulation,
     pauseSimulation: () => setSimulation((s) => ({ ...s, isPaused: true })),
     resumeSimulation: () => setSimulation((s) => ({ ...s, isPaused: false })),
-    stopSimulation: () => setSimulation((s) => ({ ...s, isRunning: false, currentNodeId: null })),
+    stopSimulation: () =>
+      setSimulation((s) => ({ ...s, isRunning: false, currentNodeId: null })),
     clearSimulationSteps: () => setSimulation((s) => ({ ...s, steps: [] })),
-  }
+  };
 
   return (
     <div className="flex h-[100dvh] w-full flex-col bg-background overflow-hidden">
@@ -375,22 +457,38 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
           {isMobile && (
             <Sheet open={leftSidebarOpen} onOpenChange={setLeftSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 md:hidden"
+                >
                   <Menu className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] p-0">
-                <ComponentSidebar onDragStart={handleDragStart} onMobileAdd={handleMobileAddComponent} isMobile />
+                <ComponentSidebar
+                  onDragStart={handleDragStart}
+                  onMobileAdd={handleMobileAddComponent}
+                  isMobile
+                />
               </SheetContent>
             </Sheet>
           )}
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-            <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              className="h-4 w-4 text-primary"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" />
               <path d="M12 22V12M2 7l10 5 10-5" />
             </svg>
           </div>
-          <span className="text-sm font-semibold text-foreground hidden sm:block">ArchFlow</span>
+          <span className="text-sm font-semibold text-foreground hidden sm:block">
+            ArchFlow
+          </span>
           <span className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 text-[10px] font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
             Live ({others.length + 1})
@@ -474,7 +572,11 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
         </div>
       </header>
 
-      <CollaborationPanel isOpen={collabPanelOpen} onClose={() => setCollabPanelOpen(false)} roomId={roomId} />
+      <CollaborationPanel
+        isOpen={collabPanelOpen}
+        onClose={() => setCollabPanelOpen(false)}
+        roomId={roomId}
+      />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {!isMobile && <ComponentSidebar onDragStart={handleDragStart} />}
@@ -495,23 +597,24 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
               onDragOver={onDragOver}
               onDrop={onDrop}
               onNodeClick={(_, node) => {
-                setSelectedNodeId(node.id)
-                updateMyPresence({ selectedNodeId: node.id })
+                setSelectedNodeId(node.id);
+                updateMyPresence({ selectedNodeId: node.id });
               }}
               onEdgeClick={(_, edge) => setSelectedEdgeId(edge.id)}
               onPaneClick={() => {
-                setSelectedNodeId(null)
-                setSelectedEdgeId(null)
-                updateMyPresence({ selectedNodeId: null })
-                if (isMobile) setRightSidebarOpen(false)
+                setSelectedNodeId(null);
+                setSelectedEdgeId(null);
+                updateMyPresence({ selectedNodeId: null });
+                if (isMobile) setRightSidebarOpen(false);
               }}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               fitView
               snapToGrid
               snapGrid={[15, 15]}
               colorMode="dark"
               defaultEdgeOptions={{
-                type: "smoothstep",
+                type: "labeled",
                 style: { strokeWidth: 1.5 },
                 animated: false,
               }}
@@ -520,11 +623,18 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
               zoomOnPinch
               preventScrolling
             >
-              {showGrid && <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#333333" />}
+              {showGrid && (
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={24}
+                  size={1}
+                  color="#333333"
+                />
+              )}
               <Controls
                 className={cn(
                   "!rounded-lg !border-border/50 !bg-background !shadow-none [&>button]:!border-border/50 [&>button]:!bg-background",
-                  isMobile && "!bottom-16 !left-2",
+                  isMobile && "!bottom-16 !left-2"
                 )}
                 showInteractive={false}
               />
@@ -532,8 +642,8 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
                 <MiniMap
                   className="!rounded-lg !border-border/50 !bg-background/90 !shadow-none"
                   nodeColor={(node) => {
-                    const data = node.data as NodeData
-                    return data.component?.color || "#8b5cf6"
+                    const data = node.data as NodeData;
+                    return data.component?.color || "#8b5cf6";
                   }}
                   maskColor="rgba(0,0,0,0.8)"
                   pannable
@@ -569,23 +679,32 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
                     {other.presence.name}
                   </div>
                 </div>
-              ) : null,
+              ) : null
             )}
 
             {nodes.length === 0 && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
-                    {isMobile ? "Tap menu to add components" : "Drag components to start building"}
+                    {isMobile
+                      ? "Tap menu to add components"
+                      : "Drag components to start building"}
                   </p>
                 </div>
               </div>
             )}
 
-            <AIChatPanel isOpen={aiChatOpen} onToggle={() => setAiChatOpen(!aiChatOpen)} isMobile={isMobile} />
+            <AIChatPanel
+              isOpen={aiChatOpen}
+              onToggle={() => setAiChatOpen(!aiChatOpen)}
+              isMobile={isMobile}
+            />
           </div>
 
-          <SimulationConsole isOpen={consoleOpen} onToggle={() => setConsoleOpen(!consoleOpen)} />
+          <SimulationConsole
+            isOpen={consoleOpen}
+            onToggle={() => setConsoleOpen(!consoleOpen)}
+          />
         </div>
 
         {!isMobile && <PropertiesPanel store={storeInterface} />}
@@ -593,23 +712,29 @@ function SyncedArchitectureDesignerInner({ roomId }: SyncedArchitectureDesignerI
         {isMobile && (
           <Sheet open={rightSidebarOpen} onOpenChange={setRightSidebarOpen}>
             <SheetContent side="right" className="w-[300px] p-0">
-              <PropertiesPanel store={storeInterface} isMobile onClose={() => setRightSidebarOpen(false)} />
+              <PropertiesPanel
+                store={storeInterface}
+                isMobile
+                onClose={() => setRightSidebarOpen(false)}
+              />
             </SheetContent>
           </Sheet>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 interface SyncedArchitectureDesignerProps {
-  roomId: string
+  roomId: string;
 }
 
-export function SyncedArchitectureDesigner({ roomId }: SyncedArchitectureDesignerProps) {
+export function SyncedArchitectureDesigner({
+  roomId,
+}: SyncedArchitectureDesignerProps) {
   return (
     <ReactFlowProvider>
       <SyncedArchitectureDesignerInner roomId={roomId} />
     </ReactFlowProvider>
-  )
+  );
 }
