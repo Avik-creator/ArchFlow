@@ -90,6 +90,13 @@ export const useProgressStore = create<ProgressStore>()(
       getProgress: (allChallenges) => {
         const { completedChallenges } = get();
 
+        // Only count completions for challenges that still exist
+        const availableIds = new Set(allChallenges.map((c) => c.id));
+        const filteredCompletedEntries = Object.entries(completedChallenges).filter(
+          ([id]) => availableIds.has(id)
+        );
+        const filteredCompleted = Object.fromEntries(filteredCompletedEntries);
+
         // Initialize byDifficulty with all difficulty levels
         const byDifficulty: Record<
           Difficulty,
@@ -103,12 +110,12 @@ export const useProgressStore = create<ProgressStore>()(
         // Count challenges by difficulty
         for (const challenge of allChallenges) {
           byDifficulty[challenge.difficulty].total += 1;
-          if (challenge.id in completedChallenges) {
+          if (challenge.id in filteredCompleted) {
             byDifficulty[challenge.difficulty].completed += 1;
           }
         }
 
-        const totalCompleted = Object.keys(completedChallenges).length;
+        const totalCompleted = filteredCompletedEntries.length;
         const totalAvailable = allChallenges.length;
 
         // Calculate success rate (percentage of available challenges completed)

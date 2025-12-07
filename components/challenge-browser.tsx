@@ -8,6 +8,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -434,6 +444,9 @@ export function ChallengeBrowser({
   const [isCreatorOpen, setIsCreatorOpen] = React.useState(false);
   const [editingChallenge, setEditingChallenge] =
     React.useState<Challenge | null>(null);
+  const [pendingDelete, setPendingDelete] = React.useState<Challenge | null>(
+    null
+  );
 
   // Combine all challenges for progress calculation
   const allChallenges = React.useMemo(
@@ -497,14 +510,7 @@ export function ChallengeBrowser({
   };
 
   const handleDeleteCustomChallenge = (challenge: Challenge) => {
-    const confirmed = window.confirm(
-      `Delete custom challenge "${challenge.title}"?`
-    );
-    if (!confirmed) return;
-    deleteCustomChallenge(challenge.id);
-    if (selectedChallenge?.id === challenge.id) {
-      setSelectedChallenge(null);
-    }
+    setPendingDelete(challenge);
   };
 
   const renderChallengeList = (challengeList: Challenge[]) => (
@@ -666,6 +672,40 @@ export function ChallengeBrowser({
           onSave={handleSaveCustomChallenge}
           editingChallenge={editingChallenge || undefined}
         />
+
+        <AlertDialog
+          open={!!pendingDelete}
+          onOpenChange={(open) => !open && setPendingDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete custom challenge?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingDelete
+                  ? `This will permanently remove "${pendingDelete.title}". You can’t undo this action.`
+                  : "This will permanently remove the challenge."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingDelete(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (!pendingDelete) return;
+                  deleteCustomChallenge(pendingDelete.id);
+                  if (selectedChallenge?.id === pendingDelete.id) {
+                    setSelectedChallenge(null);
+                  }
+                  setPendingDelete(null);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
