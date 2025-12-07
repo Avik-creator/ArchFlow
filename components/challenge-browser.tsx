@@ -20,6 +20,9 @@ import {
   ChevronRight,
   Sparkles,
   User,
+  Plus,
+  Pencil,
+  Trash,
 } from "lucide-react";
 import { useChallengeStore } from "@/lib/challenge-store";
 import { useProgressStore } from "@/lib/challenge-progress-store";
@@ -29,6 +32,7 @@ import type {
   ChallengeCategory,
 } from "@/lib/challenge-types";
 import { cn } from "@/lib/utils";
+import { ChallengeCreator } from "./challenge-creator";
 
 // ============================================================================
 // Types
@@ -156,6 +160,8 @@ interface ChallengeCardProps {
   isCompleted: boolean;
   isSelected: boolean;
   onClick: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 function ChallengeCard({
@@ -163,13 +169,24 @@ function ChallengeCard({
   isCompleted,
   isSelected,
   onClick,
+  onEdit,
+  onDelete,
 }: ChallengeCardProps) {
   const display = getChallengeDisplayData(challenge);
   const config = difficultyConfig[display.difficulty];
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  };
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       className={cn(
         "w-full text-left p-4 rounded-lg border transition-all",
         "hover:border-primary/50 hover:bg-accent/50",
@@ -189,7 +206,41 @@ function ChallengeCard({
             {display.description}
           </p>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
+        <div className="flex items-center gap-1 shrink-0">
+          {onEdit && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              title="Edit challenge"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title="Delete challenge"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          )}
+          {!onEdit && !onDelete && (
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2 mt-3">
         <Badge
@@ -202,7 +253,7 @@ function ChallengeCard({
           {categoryLabels[display.category]}
         </Badge>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -368,12 +419,21 @@ export function ChallengeBrowser({
   onClose,
   onSelectChallenge,
 }: ChallengeBrowserProps) {
-  const { challenges, customChallenges } = useChallengeStore();
+  const {
+    challenges,
+    customChallenges,
+    addCustomChallenge,
+    updateCustomChallenge,
+    deleteCustomChallenge,
+  } = useChallengeStore();
   const { isCompleted, getProgress } = useProgressStore();
 
   const [selectedChallenge, setSelectedChallenge] =
     React.useState<Challenge | null>(null);
   const [activeTab, setActiveTab] = React.useState<string>("all");
+  const [isCreatorOpen, setIsCreatorOpen] = React.useState(false);
+  const [editingChallenge, setEditingChallenge] =
+    React.useState<Challenge | null>(null);
 
   // Combine all challenges for progress calculation
   const allChallenges = React.useMemo(
@@ -413,6 +473,40 @@ export function ChallengeBrowser({
     }
   };
 
+  const handleOpenCreator = () => {
+    setActiveTab("my");
+    setIsCreatorOpen(true);
+    setEditingChallenge(null);
+  };
+
+  const handleSaveCustomChallenge = (challenge: Challenge) => {
+    if (editingChallenge) {
+      updateCustomChallenge(challenge);
+    } else {
+      addCustomChallenge(challenge);
+    }
+    setActiveTab("my");
+    setSelectedChallenge(challenge);
+    setEditingChallenge(null);
+  };
+
+  const handleEditCustomChallenge = (challenge: Challenge) => {
+    setEditingChallenge(challenge);
+    setIsCreatorOpen(true);
+    setActiveTab("my");
+  };
+
+  const handleDeleteCustomChallenge = (challenge: Challenge) => {
+    const confirmed = window.confirm(
+      `Delete custom challenge "${challenge.title}"?`
+    );
+    if (!confirmed) return;
+    deleteCustomChallenge(challenge.id);
+    if (selectedChallenge?.id === challenge.id) {
+      setSelectedChallenge(null);
+    }
+  };
+
   const renderChallengeList = (challengeList: Challenge[]) => (
     <div className="space-y-2">
       {challengeList.map((challenge) => (
@@ -422,6 +516,16 @@ export function ChallengeBrowser({
           isCompleted={isCompleted(challenge.id)}
           isSelected={selectedChallenge?.id === challenge.id}
           onClick={() => setSelectedChallenge(challenge)}
+          onEdit={
+            challenge.isCustom
+              ? () => handleEditCustomChallenge(challenge)
+              : undefined
+          }
+          onDelete={
+            challenge.isCustom
+              ? () => handleDeleteCustomChallenge(challenge)
+              : undefined
+          }
         />
       ))}
     </div>
@@ -447,13 +551,21 @@ export function ChallengeBrowser({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-5xl sm:max-w-6xl h-[82vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Architecture Challenges
-          </DialogTitle>
-          <DialogDescription>
-            Practice your system design skills with guided challenges
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <DialogTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Architecture Challenges
+              </DialogTitle>
+              <DialogDescription>
+                Practice your system design skills with guided challenges
+              </DialogDescription>
+            </div>
+            <Button size="sm" variant="outline" onClick={handleOpenCreator}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Custom Challenge
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -491,15 +603,35 @@ export function ChallengeBrowser({
                   ).map(renderDifficultySection)}
                 </TabsContent>
 
-                <TabsContent value="my" className="mt-0">
+                <TabsContent value="my" className="mt-0 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-foreground">
+                      Your Custom Challenges
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleOpenCreator}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      New
+                    </Button>
+                  </div>
                   {customChallenges.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-muted-foreground border rounded-lg bg-card">
                       <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No custom challenges yet</p>
                       <p className="text-sm">
                         Create your own challenges to practice specific
                         scenarios
                       </p>
+                      <div className="mt-4">
+                        <Button size="sm" onClick={handleOpenCreator}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Custom Challenge
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     renderChallengeList(customChallenges)
@@ -527,6 +659,13 @@ export function ChallengeBrowser({
             )}
           </div>
         </div>
+
+        <ChallengeCreator
+          isOpen={isCreatorOpen}
+          onClose={() => setIsCreatorOpen(false)}
+          onSave={handleSaveCustomChallenge}
+          editingChallenge={editingChallenge || undefined}
+        />
       </DialogContent>
     </Dialog>
   );

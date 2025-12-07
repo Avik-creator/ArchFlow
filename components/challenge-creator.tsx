@@ -569,7 +569,7 @@ export function ChallengeCreator({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0">
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>
             {isEditing ? "Edit Challenge" : "Create Challenge"}
@@ -581,192 +581,230 @@ export function ChallengeCreator({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 py-4">
-            {/* Import Error Alert */}
-            {importError && (
-              <ImportErrorAlert
-                error={importError}
-                onDismiss={() => setImportError(null)}
-              />
-            )}
-
-            {/* Import/Export Buttons */}
-            <div className="flex gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Import JSON
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export as JSON
-              </Button>
-            </div>
-
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={formState.title}
-                onChange={(e) => handleFieldChange("title", e.target.value)}
-                placeholder="e.g., E-commerce Platform"
-                className={cn(errors.title && "border-destructive")}
-              />
-              {errors.title && (
-                <p className="text-xs text-destructive">{errors.title}</p>
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full px-6">
+            <div className="space-y-6 py-4 pr-2">
+              {/* Import Error Alert */}
+              {importError && (
+                <ImportErrorAlert
+                  error={importError}
+                  onDismiss={() => setImportError(null)}
+                />
               )}
-            </div>
 
-            {/* Difficulty & Category */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Difficulty</Label>
-                <Select
-                  value={formState.difficulty}
-                  onValueChange={(value) =>
-                    handleFieldChange("difficulty", value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DIFFICULTY_VALUES.map((diff) => (
-                      <SelectItem key={diff} value={diff}>
-                        {difficultyLabels[diff]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select
-                  value={formState.category}
-                  onValueChange={(value) =>
-                    handleFieldChange("category", value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORY_VALUES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {categoryLabels[cat]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formState.description}
-                onChange={(e) =>
-                  handleFieldChange("description", e.target.value)
-                }
-                placeholder="Describe the challenge scenario and goals..."
-                className={cn(
-                  "min-h-[80px]",
-                  errors.description && "border-destructive"
-                )}
-              />
-              {errors.description && (
-                <p className="text-xs text-destructive">{errors.description}</p>
-              )}
-            </div>
-
-            {/* Requirements */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Requirements</Label>
+              {/* Import/Export Buttons */}
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  className="hidden"
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleAddRequirement}
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Requirement
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import JSON
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as JSON
                 </Button>
               </div>
-              {errors.requirements && (
-                <p className="text-xs text-destructive">
-                  {errors.requirements}
+              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground space-y-2">
+                <div className="font-medium text-foreground text-sm">
+                  JSON structure required for import
+                </div>
+                <p>
+                  The file must match <code>{"{ version: \"1.0\", challenge: {...} }"}</code> and
+                  include at least one requirement. Allowed values:
+                  difficulty = beginner | intermediate | advanced; category =
+                  web-applications | microservices | real-time-systems |
+                  data-pipelines | custom.
                 </p>
-              )}
-              <div className="space-y-3">
-                {formState.requirements.map((req, index) => (
-                  <RequirementItem
-                    key={req.id}
-                    requirement={req}
-                    index={index}
-                    errors={errors.requirementItems?.[index]}
-                    canDelete={formState.requirements.length > 1}
-                    onChange={handleRequirementChange}
-                    onDelete={handleDeleteRequirement}
-                  />
-                ))}
+                <div className="rounded border bg-background p-2 font-mono text-[11px] leading-relaxed overflow-x-auto">
+                  {`{
+  "version": "1.0",
+  "challenge": {
+    "id": "custom-unique-id",
+    "title": "My Challenge",
+    "difficulty": "beginner",
+    "category": "custom",
+    "description": "What the user should build",
+    "requirements": [
+      {
+        "id": "req-1",
+        "description": "Include a database",
+        "evaluationCriteria": "Diagram shows a database component"
+      }
+    ],
+    "hints": ["Optional hint text"],
+    "isCustom": true,
+    "createdAt": 1700000000000
+  }
+}`}
+                </div>
               </div>
-            </div>
 
-            {/* Hints */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Hints (Optional)</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddHint}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Hint
-                </Button>
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={formState.title}
+                  onChange={(e) => handleFieldChange("title", e.target.value)}
+                  placeholder="e.g., E-commerce Platform"
+                  className={cn(errors.title && "border-destructive")}
+                />
+                {errors.title && (
+                  <p className="text-xs text-destructive">{errors.title}</p>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Hints will be revealed progressively during the challenge
-              </p>
-              {formState.hints.length > 0 && (
+
+              {/* Difficulty & Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Difficulty</Label>
+                  <Select
+                    value={formState.difficulty}
+                    onValueChange={(value) =>
+                      handleFieldChange("difficulty", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIFFICULTY_VALUES.map((diff) => (
+                        <SelectItem key={diff} value={diff}>
+                          {difficultyLabels[diff]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select
+                    value={formState.category}
+                    onValueChange={(value) =>
+                      handleFieldChange("category", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORY_VALUES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {categoryLabels[cat]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formState.description}
+                  onChange={(e) =>
+                    handleFieldChange("description", e.target.value)
+                  }
+                  placeholder="Describe the challenge scenario and goals..."
+                  className={cn(
+                    "min-h-[80px]",
+                    errors.description && "border-destructive"
+                  )}
+                />
+                {errors.description && (
+                  <p className="text-xs text-destructive">
+                    {errors.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Requirements */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Requirements</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddRequirement}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Requirement
+                  </Button>
+                </div>
+                {errors.requirements && (
+                  <p className="text-xs text-destructive">
+                    {errors.requirements}
+                  </p>
+                )}
                 <div className="space-y-3">
-                  {formState.hints.map((hint, index) => (
-                    <HintItem
-                      key={index}
-                      hint={hint}
+                  {formState.requirements.map((req, index) => (
+                    <RequirementItem
+                      key={req.id}
+                      requirement={req}
                       index={index}
-                      onChange={handleHintChange}
-                      onDelete={handleDeleteHint}
+                      errors={errors.requirementItems?.[index]}
+                      canDelete={formState.requirements.length > 1}
+                      onChange={handleRequirementChange}
+                      onDelete={handleDeleteRequirement}
                     />
                   ))}
                 </div>
-              )}
+              </div>
+
+              {/* Hints */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Hints (Optional)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddHint}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Hint
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Hints will be revealed progressively during the challenge
+                </p>
+                {formState.hints.length > 0 && (
+                  <div className="space-y-3">
+                    {formState.hints.map((hint, index) => (
+                      <HintItem
+                        key={index}
+                        hint={hint}
+                        index={index}
+                        onChange={handleHintChange}
+                        onDelete={handleDeleteHint}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </ScrollArea>
+          </ScrollArea>
+        </div>
 
         <DialogFooter className="px-6 py-4 border-t">
           <Button type="button" variant="outline" onClick={onClose}>

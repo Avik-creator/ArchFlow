@@ -38,6 +38,7 @@ interface ChallengeStore {
 
   // Custom Challenge CRUD
   addCustomChallenge: (challenge: Challenge) => void;
+  updateCustomChallenge: (challenge: Challenge) => void;
   deleteCustomChallenge: (id: string) => void;
   importChallenge: (json: string) => Challenge;
   exportChallenge: (id: string) => string;
@@ -122,6 +123,33 @@ export const useChallengeStore = create<ChallengeStore>()(
         set((state) => ({
           customChallenges: [...state.customChallenges, customChallenge],
         }));
+      },
+
+      /**
+       * Updates an existing custom challenge by ID.
+       */
+      updateCustomChallenge: (challenge) => {
+        const updatedChallenge: Challenge = {
+          ...challenge,
+          isCustom: true,
+          createdAt: challenge.createdAt ?? Date.now(),
+        };
+
+        if (!isValidChallenge(updatedChallenge)) {
+          throw new Error("Invalid challenge structure");
+        }
+
+        set((state) => {
+          const index = state.customChallenges.findIndex(
+            (c) => c.id === updatedChallenge.id
+          );
+          if (index === -1) {
+            return state;
+          }
+          const newCustomChallenges = [...state.customChallenges];
+          newCustomChallenges[index] = updatedChallenge;
+          return { customChallenges: newCustomChallenges };
+        });
       },
 
       /**
