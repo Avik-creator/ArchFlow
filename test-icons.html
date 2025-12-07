@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Icons Test</title>
+    <style>
+      body {
+        font-family: Arial;
+        padding: 20px;
+        background: #0a0a0a;
+        color: white;
+      }
+      .icon-test {
+        display: inline-block;
+        margin: 10px;
+        text-align: center;
+        width: 80px;
+      }
+      img {
+        width: 48px;
+        height: 48px;
+        display: block;
+        margin: 0 auto 5px;
+      }
+      .error {
+        color: red;
+      }
+      .success {
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Simple Icons CDN Test</h1>
+    <p>Green = loaded, Red = 404 error</p>
+
+    <h2>Compute</h2>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/docker/2496ED"
+        alt="Docker"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>Docker</div>
+    </div>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/kubernetes/326CE5"
+        alt="Kubernetes"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>Kubernetes</div>
+    </div>
+
+    <h2>Storage</h2>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/postgresql/4169E1"
+        alt="PostgreSQL"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>PostgreSQL</div>
+    </div>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/mongodb/47A248"
+        alt="MongoDB"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>MongoDB</div>
+    </div>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/redis/DC382D"
+        alt="Redis"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>Redis</div>
+    </div>
+
+    <h2>Cloud</h2>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/googlecloud/4285F4"
+        alt="GCP"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>Google Cloud</div>
+    </div>
+
+    <h2>Network</h2>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/cloudflare/F38020"
+        alt="Cloudflare"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>Cloudflare</div>
+    </div>
+
+    <h2>Messaging</h2>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/rabbitmq/FF6600"
+        alt="RabbitMQ"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>RabbitMQ</div>
+    </div>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/apachekafka/231F20"
+        alt="Kafka"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>Kafka</div>
+    </div>
+
+    <h2>API</h2>
+    <div class="icon-test">
+      <img
+        src="https://cdn.simpleicons.org/graphql/E10098"
+        alt="GraphQL"
+        onerror="this.parentElement.classList.add('error')"
+        onload="this.parentElement.classList.add('success')"
+      />
+      <div>GraphQL</div>
+    </div>
+
+    <h2 style="margin-top: 40px">Note</h2>
+    <p>
+      AWS and Azure don't have working Simple Icons slugs, so they use Lucide
+      fallback icons in the app.
+    </p>
+  </body>
+</html>
