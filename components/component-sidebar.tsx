@@ -95,12 +95,12 @@ export function ComponentSidebar({
     <TooltipProvider delayDuration={400}>
       <div
         className={cn(
-          "flex h-full min-h-0 flex-col border-r border-border/50 bg-background flex-shrink-0",
+          "flex h-full min-h-0 flex-col border-r border-border/50 bg-background shrink-0",
           isMobile ? "w-full" : "w-56"
         )}
       >
         {/* Header */}
-        <div className="border-b border-border/50 p-3 flex-shrink-0">
+        <div className="border-b border-border/50 p-3 shrink-0">
           {isMobile && (
             <h2 className="text-sm font-semibold mb-3">Components</h2>
           )}
@@ -224,7 +224,7 @@ export function ComponentSidebar({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border/50 p-3 flex-shrink-0 space-y-2">
+        <div className="border-t border-border/50 p-3 shrink-0 space-y-2">
           <CustomIconDialog
             trigger={
               <button className="flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">

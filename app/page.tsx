@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "next/link";
 import {
   Shield,
   Lock,
@@ -15,9 +15,10 @@ import {
   Menu,
   Users,
   MessageSquare,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+  Trophy,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Home() {
   return (
@@ -30,15 +31,31 @@ export default function Home() {
             <span className="font-semibold">ArchFlow</span>
           </div>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <a href="#features" className="transition-colors hover:text-foreground">
+            <a
+              href="#features"
+              className="transition-colors hover:text-foreground"
+            >
               Features
             </a>
-            <a href="#privacy" className="transition-colors hover:text-foreground">
+            <a
+              href="#privacy"
+              className="transition-colors hover:text-foreground"
+            >
               Privacy
             </a>
-            <a href="#how-it-works" className="transition-colors hover:text-foreground">
+            <a
+              href="#how-it-works"
+              className="transition-colors hover:text-foreground"
+            >
               How it Works
             </a>
+            <Link
+              href="/designer?challenges=true"
+              className="flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
+              <Trophy className="h-3.5 w-3.5 text-amber-500" />
+              Challenges
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/designer" className="hidden sm:block">
@@ -49,7 +66,11 @@ export default function Home() {
             </Link>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 md:hidden"
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -64,6 +85,13 @@ export default function Home() {
                   <a href="#how-it-works" className="text-lg font-medium">
                     How it Works
                   </a>
+                  <Link
+                    href="/designer?challenges=true"
+                    className="flex items-center gap-2 text-lg font-medium"
+                  >
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    Challenges
+                  </Link>
                   <Link href="/designer" className="mt-4">
                     <Button className="w-full gap-2">
                       Open Designer
@@ -87,15 +115,19 @@ export default function Home() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-4 md:mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 md:px-4 md:py-1.5 text-xs md:text-sm text-muted-foreground">
               <Users className="h-3 w-3 md:h-3.5 md:w-3.5 text-primary" />
-              <span className="hidden sm:inline">Real-time Collaboration —</span> Design together, anywhere
+              <span className="hidden sm:inline">
+                Real-time Collaboration —
+              </span>{" "}
+              Design together, anywhere
             </div>
             <h1 className="mb-4 md:mb-6 text-3xl font-bold tracking-tight text-balance sm:text-4xl lg:text-6xl">
               Design System Architecture
               <span className="text-primary"> Together</span>
             </h1>
             <p className="mb-6 md:mb-8 text-base md:text-lg leading-relaxed text-muted-foreground text-pretty px-2">
-              Build, visualize, and test your system architecture with an intuitive drag-and-drop interface. Collaborate
-              in real-time, connect to APIs, and iterate fast.
+              Build, visualize, and test your system architecture with an
+              intuitive drag-and-drop interface. Collaborate in real-time,
+              connect to APIs, and iterate fast.
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <Link href="/designer" className="w-full sm:w-auto">
@@ -105,7 +137,11 @@ export default function Home() {
                 </Button>
               </Link>
               <a href="#how-it-works" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto bg-transparent"
+                >
                   See How It Works
                 </Button>
               </a>
@@ -119,7 +155,9 @@ export default function Home() {
                 <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full bg-red-500/70" />
                 <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full bg-yellow-500/70" />
                 <div className="h-2.5 w-2.5 md:h-3 md:w-3 rounded-full bg-green-500/70" />
-                <span className="ml-2 text-[10px] md:text-xs text-muted-foreground">ArchFlow Designer</span>
+                <span className="ml-2 text-[10px] md:text-xs text-muted-foreground">
+                  ArchFlow Designer
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="flex -space-x-1.5">
@@ -127,7 +165,9 @@ export default function Home() {
                   <div className="h-5 w-5 rounded-full border-2 border-background bg-violet-500" />
                   <div className="h-5 w-5 rounded-full border-2 border-background bg-orange-500" />
                 </div>
-                <span className="ml-1.5 text-[10px] text-muted-foreground hidden sm:block">3 online</span>
+                <span className="ml-1.5 text-[10px] text-muted-foreground hidden sm:block">
+                  3 online
+                </span>
               </div>
             </div>
             <div className="relative aspect-[16/10] md:aspect-video bg-background p-4 md:p-8">
@@ -140,14 +180,18 @@ export default function Home() {
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-card">
                         <Globe className="h-6 w-6 text-blue-500" />
                       </div>
-                      <span className="text-[10px] text-muted-foreground">Client</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Client
+                      </span>
                     </div>
                     <div className="h-0.5 w-8 bg-primary" />
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-card">
                         <Server className="h-6 w-6 text-emerald-500" />
                       </div>
-                      <span className="text-[10px] text-muted-foreground">API</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        API
+                      </span>
                     </div>
                   </div>
                   <div className="w-0.5 h-4 bg-primary" />
@@ -156,13 +200,17 @@ export default function Home() {
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-card">
                         <Database className="h-6 w-6 text-orange-500" />
                       </div>
-                      <span className="text-[10px] text-muted-foreground">DB</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        DB
+                      </span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-card">
                         <Cloud className="h-6 w-6 text-violet-500" />
                       </div>
-                      <span className="text-[10px] text-muted-foreground">Cache</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Cache
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -173,14 +221,18 @@ export default function Home() {
                     <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-card">
                       <Globe className="h-8 w-8 text-blue-500" />
                     </div>
-                    <span className="text-xs text-muted-foreground">Client</span>
+                    <span className="text-xs text-muted-foreground">
+                      Client
+                    </span>
                   </div>
                   <div className="h-0.5 w-16 bg-primary" />
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-card">
                       <Server className="h-8 w-8 text-emerald-500" />
                     </div>
-                    <span className="text-xs text-muted-foreground">API Gateway</span>
+                    <span className="text-xs text-muted-foreground">
+                      API Gateway
+                    </span>
                   </div>
                   <div className="h-0.5 w-16 bg-primary" />
                   <div className="flex flex-col gap-4">
@@ -188,13 +240,17 @@ export default function Home() {
                       <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-card">
                         <Database className="h-8 w-8 text-orange-500" />
                       </div>
-                      <span className="text-xs text-muted-foreground">Database</span>
+                      <span className="text-xs text-muted-foreground">
+                        Database
+                      </span>
                     </div>
                     <div className="flex flex-col items-center gap-2">
                       <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-card">
                         <Cloud className="h-8 w-8 text-violet-500" />
                       </div>
-                      <span className="text-xs text-muted-foreground">Cache</span>
+                      <span className="text-xs text-muted-foreground">
+                        Cache
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -205,13 +261,18 @@ export default function Home() {
       </section>
 
       {/* Privacy Section */}
-      <section id="privacy" className="border-t border-border bg-card/50 py-16 md:py-20">
+      <section
+        id="privacy"
+        className="border-t border-border bg-card/50 py-16 md:py-20"
+      >
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="mx-auto mb-10 md:mb-12 max-w-2xl text-center">
-            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">Privacy by Design</h2>
+            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">
+              Privacy by Design
+            </h2>
             <p className="text-sm md:text-base text-muted-foreground px-2">
-              Your architecture diagrams and API configurations stay on your device. No accounts, no cloud storage, no
-              tracking.
+              Your architecture diagrams and API configurations stay on your
+              device. No accounts, no cloud storage, no tracking.
             </p>
           </div>
           <div className="grid gap-4 md:gap-6 md:grid-cols-3">
@@ -221,8 +282,8 @@ export default function Home() {
               </div>
               <h3 className="mb-2 font-semibold">Local-First Storage</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                All your diagrams are stored in your browser's local storage. Export to JSON anytime to back up or
-                share.
+                All your diagrams are stored in your browser's local storage.
+                Export to JSON anytime to back up or share.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-5 md:p-6">
@@ -231,7 +292,8 @@ export default function Home() {
               </div>
               <h3 className="mb-2 font-semibold">No Tracking</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Zero analytics, no cookies, no fingerprinting. We don't know who you are or what you build.
+                Zero analytics, no cookies, no fingerprinting. We don't know who
+                you are or what you build.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-5 md:p-6">
@@ -240,8 +302,8 @@ export default function Home() {
               </div>
               <h3 className="mb-2 font-semibold">Your API Keys Stay Safe</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                API configurations for testing flows are stored locally and requests are made directly from your
-                browser.
+                API configurations for testing flows are stored locally and
+                requests are made directly from your browser.
               </p>
             </div>
           </div>
@@ -252,9 +314,12 @@ export default function Home() {
       <section id="features" className="border-t border-border py-16 md:py-20">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="mx-auto mb-10 md:mb-12 max-w-2xl text-center">
-            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">Everything You Need</h2>
+            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">
+              Everything You Need
+            </h2>
             <p className="text-sm md:text-base text-muted-foreground">
-              A complete toolkit for designing, testing, and iterating on your system architecture.
+              A complete toolkit for designing, testing, and iterating on your
+              system architecture.
             </p>
           </div>
           <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -314,12 +379,17 @@ export default function Home() {
                   "All data stays in your browser. No accounts, no tracking. Collaboration is peer-to-peer via Liveblocks.",
               },
             ].map((feature, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-5 md:p-6">
+              <div
+                key={i}
+                className="rounded-xl border border-border bg-card p-5 md:p-6"
+              >
                 <div className="mb-3 md:mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <feature.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="mb-2 font-semibold">{feature.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -327,10 +397,15 @@ export default function Home() {
       </section>
 
       {/* How It Works Section - Updated to include collaboration step */}
-      <section id="how-it-works" className="border-t border-border bg-card/50 py-16 md:py-20">
+      <section
+        id="how-it-works"
+        className="border-t border-border bg-card/50 py-16 md:py-20"
+      >
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="mx-auto mb-10 md:mb-12 max-w-2xl text-center">
-            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">How It Works</h2>
+            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">
+              How It Works
+            </h2>
             <p className="text-sm md:text-base text-muted-foreground">
               Design and test your architecture in four simple steps.
             </p>
@@ -363,9 +438,13 @@ export default function Home() {
               },
             ].map((item, i) => (
               <div key={i} className="relative">
-                <span className="mb-3 md:mb-4 block text-4xl md:text-5xl font-bold text-primary/20">{item.step}</span>
+                <span className="mb-3 md:mb-4 block text-4xl md:text-5xl font-bold text-primary/20">
+                  {item.step}
+                </span>
                 <h3 className="mb-2 font-semibold">{item.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
@@ -376,9 +455,12 @@ export default function Home() {
       <section className="border-t border-border py-16 md:py-20">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="rounded-2xl border border-border bg-card p-8 md:p-12 text-center">
-            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">Ready to Design?</h2>
+            <h2 className="mb-3 md:mb-4 text-2xl md:text-3xl font-bold">
+              Ready to Design?
+            </h2>
             <p className="mb-6 md:mb-8 text-sm md:text-base text-muted-foreground">
-              Start building your architecture diagrams now. No sign-up required.
+              Start building your architecture diagrams now. No sign-up
+              required.
             </p>
             <Link href="/designer">
               <Button size="lg" className="gap-2">
@@ -397,7 +479,9 @@ export default function Home() {
             <Workflow className="h-4 w-4" />
             <span>ArchFlow</span>
           </div>
-          <p className="text-center">Privacy-first architecture design tool. No data collection.</p>
+          <p className="text-center">
+            Privacy-first architecture design tool. No data collection.
+          </p>
           <div className="flex items-center gap-4 text-xs md:text-sm">
             <Link
               href="https://x.com/avikm744"
@@ -420,5 +504,5 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

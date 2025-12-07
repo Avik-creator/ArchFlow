@@ -34,9 +34,24 @@ import {
 import { createSimulationRunner } from "@/lib/simulation-engine";
 import type { ArchitectureComponent, NodeData } from "@/lib/architecture-types";
 import { cn } from "@/lib/utils";
-import { Menu, PanelRight, Users } from "lucide-react";
+import { Menu, PanelRight, Users, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ChallengeBrowser } from "./challenge-browser";
+import type { Challenge } from "@/lib/challenge-types";
+import { ChallengePanel } from "./challenge-panel";
+import { useChallengeStore } from "@/lib/challenge-store";
+import { useProgressStore } from "@/lib/challenge-progress-store";
+import {
+  evaluateSubmission,
+  createInitialEvaluationState,
+  createSuccessState,
+  createErrorState,
+  type EvaluationState,
+  EvaluationError,
+} from "@/lib/submission-evaluator";
+import { EvaluationResults } from "./evaluation-results";
+import { useToast } from "@/hooks/use-toast";
 
 const nodeTypes: NodeTypes = {
   architecture: ArchitectureNode,
@@ -76,6 +91,7 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
     onEdgesChange,
     onConnect,
     addNode,
+    clearCanvas,
     setSelectedNodeId,
     setSelectedEdgeId,
     selectedNodeId,
@@ -86,6 +102,16 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
     setCurrentSimulationNode,
     addSimulationStep,
   } = useArchitectureStore();
+  const {
+    activeChallenge,
+    challengeMode,
+    enterChallengeMode,
+    exitChallengeMode,
+    revealHint,
+    revealedHints,
+  } = useChallengeStore();
+  const { markCompleted } = useProgressStore();
+  const { toast } = useToast();
 
   const [showGrid, setShowGrid] = useState(true);
   const [consoleOpen, setConsoleOpen] = useState(false);
@@ -93,9 +119,115 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [collabPanelOpen, setCollabPanelOpen] = useState(false);
+  const [challengeBrowserOpen, setChallengeBrowserOpen] = useState(false);
+  const [challengePanelOpen, setChallengePanelOpen] = useState(false);
+  const [challengeResultsOpen, setChallengeResultsOpen] = useState(false);
+  const [isSubmittingChallenge, setIsSubmittingChallenge] = useState(false);
+  const [evaluationState, setEvaluationState] =
+    useState<EvaluationState>(createInitialEvaluationState);
   const simulationRunnerRef = useRef<ReturnType<
     typeof createSimulationRunner
   > | null>(null);
+
+  // Check for challenges query param on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("challenges") === "true") {
+      setChallengeBrowserOpen(true);
+      // Clean up the URL
+      params.delete("challenges");
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, []);
+
+  // Close challenge panel when challenge mode exits
+  useEffect(() => {
+    if (!challengeMode || !activeChallenge) {
+      setChallengePanelOpen(false);
+    }
+  }, [challengeMode, activeChallenge]);
+
+  const handleSelectChallenge = (challenge: Challenge) => {
+    clearCanvas();
+    enterChallengeMode(challenge);
+    setEvaluationState(createInitialEvaluationState());
+    setChallengeResultsOpen(false);
+    setIsSubmittingChallenge(false);
+    setChallengeBrowserOpen(false);
+    // Open challenge panel when a new challenge is selected
+    setChallengePanelOpen(true);
+    if (isMobile) {
+      setRightSidebarOpen(false);
+    }
+  };
+
+  const handleRevealHint = (index: number) => {
+    revealHint(index);
+  };
+
+  const handleExitChallenge = () => {
+    exitChallengeMode();
+    clearCanvas();
+    setEvaluationState(createInitialEvaluationState());
+    setChallengeResultsOpen(false);
+    setIsSubmittingChallenge(false);
+  };
+
+  const handleSubmitChallenge = async () => {
+    if (!activeChallenge) return;
+
+    if (nodes.length === 0) {
+      toast({
+        title: "Add components first",
+        description:
+          "Place some components on the canvas before submitting the challenge.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingChallenge(true);
+    try {
+      const result = await evaluateSubmission(activeChallenge, nodes, edges);
+      setEvaluationState(createSuccessState(result));
+      setChallengeResultsOpen(true);
+      markCompleted(activeChallenge.id, result.score);
+      // Close challenge panel after successful submission
+      setChallengePanelOpen(false);
+    } catch (error) {
+      const evaluationError =
+        error instanceof EvaluationError
+          ? error
+          : new EvaluationError(
+              "Failed to submit challenge",
+              undefined,
+              (error as Error).message
+            );
+      setEvaluationState(createErrorState(evaluationError));
+      toast({
+        title: "Submission failed",
+        description: evaluationError.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingChallenge(false);
+    }
+  };
+
+  const handleTryAgain = () => {
+    setChallengeResultsOpen(false);
+    setEvaluationState(createInitialEvaluationState());
+    clearCanvas();
+  };
+
+  const handleNextChallenge = () => {
+    setChallengeResultsOpen(false);
+    setEvaluationState(createInitialEvaluationState());
+    setChallengeBrowserOpen(true);
+  };
 
   useEffect(() => {
     if (!edges.length) return;
@@ -309,6 +441,36 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
 
           <Button
             variant="ghost"
+            size="icon"
+            className="h-8 w-8 sm:hidden"
+            onClick={() =>
+              challengeMode && activeChallenge
+                ? setChallengePanelOpen(true)
+                : setChallengeBrowserOpen(true)
+            }
+          >
+            <Trophy className="h-4 w-4 text-amber-500" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-xs hidden sm:flex"
+            onClick={() => setChallengeBrowserOpen(true)}
+          >
+            <Trophy className="h-3.5 w-3.5 text-amber-500" />
+            Challenges
+          </Button>
+
+          {challengeMode && activeChallenge && (
+            <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-300">
+              <Trophy className="h-3 w-3" />
+              {activeChallenge.title}
+            </span>
+          )}
+
+          <Button
+            variant="ghost"
             size="sm"
             className={cn(
               "h-8 gap-1.5 text-xs hidden sm:flex",
@@ -464,6 +626,18 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
           />
         </div>
 
+        {/* Challenge Panel */}
+        {challengeMode && activeChallenge && !isMobile && (
+          <ChallengePanel
+            challenge={activeChallenge}
+            revealedHints={revealedHints}
+            onRevealHint={handleRevealHint}
+            onSubmit={handleSubmitChallenge}
+            onExit={handleExitChallenge}
+            isSubmitting={isSubmittingChallenge}
+          />
+        )}
+
         {/* Desktop Properties Panel */}
         {!isMobile && <PropertiesPanel />}
 
@@ -477,7 +651,39 @@ function ArchitectureDesignerInner({ roomId }: ArchitectureDesignerInnerProps) {
             </SheetContent>
           </Sheet>
         )}
+
+        {isMobile && challengeMode && activeChallenge && (
+          <Sheet open={challengePanelOpen} onOpenChange={setChallengePanelOpen}>
+            <SheetContent side="right" className="w-[90vw] max-w-xl p-0">
+              <ChallengePanel
+                challenge={activeChallenge}
+                revealedHints={revealedHints}
+                onRevealHint={handleRevealHint}
+                onSubmit={handleSubmitChallenge}
+                onExit={handleExitChallenge}
+                isSubmitting={isSubmittingChallenge}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
       </div>
+
+      {/* Challenge Browser Dialog */}
+      <ChallengeBrowser
+        isOpen={challengeBrowserOpen}
+        onClose={() => setChallengeBrowserOpen(false)}
+        onSelectChallenge={handleSelectChallenge}
+      />
+
+      {evaluationState.result && (
+        <EvaluationResults
+          result={evaluationState.result}
+          isOpen={challengeResultsOpen}
+          onTryAgain={handleTryAgain}
+          onNextChallenge={handleNextChallenge}
+          onClose={() => setChallengeResultsOpen(false)}
+        />
+      )}
     </div>
   );
 }

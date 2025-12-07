@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useOthers, useSelf } from "@liveblocks/react/suspense"
+import { useOthers, useSelf } from "@/liveblocks.config";
 
 export function CollaborationCursors() {
-  const others = useOthers()
+  const others = useOthers();
 
   return (
     <>
       {others.map(({ connectionId, presence, info }) => {
-        if (!presence.cursor) return null
+        if (!presence.cursor || !info) return null;
 
         return (
           <div
@@ -20,7 +20,13 @@ export function CollaborationCursors() {
               transform: "translate(-4px, -4px)",
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill={info.color} className="drop-shadow-md">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill={info.color}
+              className="drop-shadow-md"
+            >
               <path d="M5.65376 12.4561L8.06366 14.8661L14.8657 8.06405L5.65376 2.65405V12.4561Z" />
             </svg>
             <span
@@ -30,22 +36,27 @@ export function CollaborationCursors() {
               {info.name}
             </span>
           </div>
-        )
+        );
       })}
     </>
-  )
+  );
 }
 
 export function CollaborationAvatars() {
-  const others = useOthers()
-  const self = useSelf()
+  const others = useOthers();
+  const self = useSelf();
 
   const allUsers = [
-    ...(self ? [{ connectionId: "self", info: self.info }] : []),
-    ...others.map((other) => ({ connectionId: other.connectionId, info: other.info })),
-  ]
+    ...(self?.info ? [{ connectionId: "self" as const, info: self.info }] : []),
+    ...others
+      .filter((other) => other.info)
+      .map((other) => ({
+        connectionId: other.connectionId,
+        info: other.info!,
+      })),
+  ];
 
-  if (allUsers.length === 0) return null
+  if (allUsers.length === 0) return null;
 
   return (
     <div className="flex items-center -space-x-2">
@@ -56,7 +67,11 @@ export function CollaborationAvatars() {
           style={{ backgroundColor: info.color }}
           title={info.name}
         >
-          <img src={info.picture || "/placeholder.svg"} alt={info.name} className="h-full w-full object-cover" />
+          <img
+            src={info.picture || "/placeholder.svg"}
+            alt={info.name}
+            className="h-full w-full object-cover"
+          />
         </div>
       ))}
       {allUsers.length > 5 && (
@@ -65,5 +80,5 @@ export function CollaborationAvatars() {
         </div>
       )}
     </div>
-  )
+  );
 }

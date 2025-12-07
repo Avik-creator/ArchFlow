@@ -27,7 +27,10 @@ import {
   useUpdateMyPresence,
   useOthers,
   useSelf,
+  type SerializedNode,
+  type SerializedEdge,
 } from "@/liveblocks.config";
+import { LiveList, LiveObject } from "@liveblocks/client";
 import { exportToPng, exportToSvg, exportToJson } from "@/lib/export-utils";
 import { ComponentSidebar } from "./component-sidebar";
 import { PropertiesPanel } from "./properties-panel";
@@ -102,8 +105,46 @@ function SyncedArchitectureDesignerInner({
   const others = useOthers();
   const self = useSelf();
 
-  const nodes = useStorage((root) => root.nodes) ?? [];
-  const edges = useStorage((root) => root.edges) ?? [];
+  const nodesLiveList = useStorage((root) => root.nodes);
+  const edgesLiveList = useStorage((root) => root.edges);
+
+  // Convert LiveList to arrays for use in ReactFlow
+  const nodes: ArchNode[] = nodesLiveList
+    ? Array.from(nodesLiveList).map((node) => {
+      // LiveList items are already plain objects when accessed
+      const nodeData = node as unknown as SerializedNode;
+      return {
+        id: nodeData.id,
+        type: nodeData.type || "architecture",
+        position: nodeData.position,
+        data: nodeData.data,
+      } as ArchNode;
+    })
+    : [];
+
+  const edges: ArchitectureEdge[] = edgesLiveList
+    ? Array.from(edgesLiveList).map((edge) => {
+      // LiveList items are already plain objects when accessed
+      const edgeData = edge as unknown as SerializedEdge;
+      const key = edgeData.id ?? `${edgeData.source}-${edgeData.target}`;
+      const data = edgeData.data || {};
+      const color = (data as any).color as string | undefined ?? getEdgeColor(key);
+      return {
+        id: edgeData.id,
+        source: edgeData.source,
+        target: edgeData.target,
+        sourceHandle: edgeData.sourceHandle,
+        targetHandle: edgeData.targetHandle,
+        type: edgeData.type || "labeled",
+        label: data.label,
+        style: {
+          stroke: color,
+          strokeWidth: EDGE_STROKE_WIDTH
+        },
+        data: { ...data, color },
+      } as ArchitectureEdge;
+    })
+    : [];
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -122,74 +163,132 @@ function SyncedArchitectureDesignerInner({
   });
 
   const setNodes = useMutation(({ storage }, newNodes: ArchNode[]) => {
-    storage.set("nodes", newNodes);
+    const liveList = new LiveList<LiveObject<SerializedNode>>([]);
+    for (const node of newNodes) {
+      liveList.push(
+        new LiveObject<SerializedNode>({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: node.data,
+        })
+      );
+    }
+    storage.set("nodes", liveList);
   }, []);
 
   const setEdges = useMutation(({ storage }, newEdges: ArchitectureEdge[]) => {
-    storage.set("edges", colorizeEdges(newEdges));
+    const colorized = colorizeEdges(newEdges);
+    const liveList = new LiveList<LiveObject<SerializedEdge>>([]);
+    for (const edge of colorized) {
+      liveList.push(
+        new LiveObject<SerializedEdge>({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+          type: edge.type,
+          data: edge.data,
+        })
+      );
+    }
+    storage.set("edges", liveList);
   }, []);
+
   useEffect(() => {
     if (!edges.length) return;
     if (edges.some((edge) => !edge.style?.stroke)) {
-      setEdges(edges as ArchitectureEdge[]);
+      setEdges(edges);
     }
   }, [edges, setEdges]);
 
   const addNode = useMutation(({ storage }, node: ArchNode) => {
-    const currentNodes = storage.get("nodes") ?? [];
-    storage.set("nodes", [...currentNodes, node]);
+    const nodes = storage.get("nodes");
+    if (nodes) {
+      nodes.push(
+        new LiveObject<SerializedNode>({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: node.data,
+        })
+      );
+    }
   }, []);
 
   const updateNodeData = useMutation(
     ({ storage }, nodeId: string, data: Partial<NodeData>) => {
-      const currentNodes = storage.get("nodes") ?? [];
-      const updatedNodes = currentNodes.map((n: ArchNode) =>
-        n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
-      );
-      storage.set("nodes", updatedNodes);
+      const nodes = storage.get("nodes");
+      if (nodes) {
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes.get(i);
+          if (node && node.get("id") === nodeId) {
+            const currentData = node.get("data");
+            node.set("data", { ...currentData, ...data });
+            break;
+          }
+        }
+      }
     },
     []
   );
 
   const updateEdgeData = useMutation(
     ({ storage }, edgeId: string, data: { label?: string }) => {
-      const currentEdges = storage.get("edges") ?? [];
-      const updatedEdges = currentEdges.map((e: ArchitectureEdge) =>
-        e.id === edgeId
-          ? { ...e, label: data.label, data: { ...e.data, ...data } }
-          : e
-      );
-      storage.set("edges", updatedEdges);
+      const edges = storage.get("edges");
+      if (edges) {
+        for (let i = 0; i < edges.length; i++) {
+          const edge = edges.get(i);
+          if (edge && edge.get("id") === edgeId) {
+            const currentData = edge.get("data") || {};
+            edge.set("data", { ...currentData, ...data });
+            break;
+          }
+        }
+      }
     },
     []
   );
 
   const deleteNode = useMutation(({ storage }, nodeId: string) => {
-    const currentNodes = storage.get("nodes") ?? [];
-    const currentEdges = storage.get("edges") ?? [];
-    storage.set(
-      "nodes",
-      currentNodes.filter((n: ArchNode) => n.id !== nodeId)
-    );
-    storage.set(
-      "edges",
-      currentEdges.filter(
-        (e: ArchitectureEdge) => e.source !== nodeId && e.target !== nodeId
-      )
-    );
+    const nodes = storage.get("nodes");
+    const edges = storage.get("edges");
+    if (nodes) {
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const node = nodes.get(i);
+        if (node && node.get("id") === nodeId) {
+          nodes.delete(i);
+        }
+      }
+    }
+    if (edges) {
+      for (let i = edges.length - 1; i >= 0; i--) {
+        const edge = edges.get(i);
+        if (edge && (edge.get("source") === nodeId || edge.get("target") === nodeId)) {
+          edges.delete(i);
+        }
+      }
+    }
   }, []);
 
   const deleteEdge = useMutation(({ storage }, edgeId: string) => {
-    const currentEdges = storage.get("edges") ?? [];
-    storage.set(
-      "edges",
-      currentEdges.filter((e: ArchitectureEdge) => e.id !== edgeId)
-    );
+    const edges = storage.get("edges");
+    if (edges) {
+      for (let i = edges.length - 1; i >= 0; i--) {
+        const edge = edges.get(i);
+        if (edge && edge.get("id") === edgeId) {
+          edges.delete(i);
+        }
+      }
+    }
   }, []);
 
   const clearCanvas = useMutation(({ storage }) => {
-    storage.set("nodes", []);
-    storage.set("edges", []);
+    const emptyNodes = new LiveList<LiveObject<SerializedNode>>([]);
+    const emptyEdges = new LiveList<LiveObject<SerializedEdge>>([]);
+    storage.set("nodes", emptyNodes);
+    storage.set("edges", emptyEdges);
   }, []);
 
   useEffect(() => {
@@ -232,26 +331,24 @@ function SyncedArchitectureDesignerInner({
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const newEdgeId = `e-${connection.source}-${
-        connection.target
-      }-${Date.now()}`;
+      const newEdgeId = `e-${connection.source}-${connection.target
+        }-${Date.now()}`;
       const color = getEdgeColor(newEdgeId);
-      const labelFromData =
-        typeof connection.data?.label === "string" ? connection.data.label : "";
-      const labelFromConnection =
-        typeof connection.label === "string" ? connection.label : "";
-      const label = labelFromConnection || labelFromData;
+      const label = "";
 
-      const newEdge = {
-        ...connection,
+      const newEdge: ArchitectureEdge = {
         id: newEdgeId,
-        type: "smoothstep",
+        source: connection.source!,
+        target: connection.target!,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+        type: "labeled",
         animated: false,
         label,
         style: { stroke: color, strokeWidth: 2 },
         data: { label, color },
-      } as ArchitectureEdge;
-      setEdges(addEdge(newEdge, edges as ArchitectureEdge[]));
+      };
+      setEdges([...edges, newEdge]);
     },
     [edges, setEdges]
   );
@@ -429,8 +526,8 @@ function SyncedArchitectureDesignerInner({
 
   // Provide store-like interface for PropertiesPanel
   const storeInterface = {
-    nodes,
-    edges,
+    nodes: [...nodes] as ArchNode[],
+    edges: [...edges] as ArchitectureEdge[],
     selectedNodeId,
     selectedEdgeId,
     simulation,
@@ -448,11 +545,11 @@ function SyncedArchitectureDesignerInner({
   };
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col bg-background overflow-hidden">
+    <div className="flex h-dvh w-full flex-col bg-background overflow-hidden">
       <ConnectionStatus />
 
       {/* Header */}
-      <header className="flex h-12 items-center justify-between border-b border-border/50 bg-background px-3 md:px-4 flex-shrink-0">
+      <header className="flex h-12 items-center justify-between border-b border-border/50 bg-background px-3 md:px-4 shrink-0">
         <div className="flex items-center gap-2">
           {isMobile && (
             <Sheet open={leftSidebarOpen} onOpenChange={setLeftSidebarOpen}>
@@ -633,14 +730,14 @@ function SyncedArchitectureDesignerInner({
               )}
               <Controls
                 className={cn(
-                  "!rounded-lg !border-border/50 !bg-background !shadow-none [&>button]:!border-border/50 [&>button]:!bg-background",
-                  isMobile && "!bottom-16 !left-2"
+                  "rounded-lg! border-border/50! bg-background! shadow-none! [&>button]:border-border/50! [&>button]:bg-background!",
+                  isMobile && "bottom-16! left-2!"
                 )}
                 showInteractive={false}
               />
               {!isMobile && (
                 <MiniMap
-                  className="!rounded-lg !border-border/50 !bg-background/90 !shadow-none"
+                  className="rounded-lg! border-border/50! bg-background/90! shadow-none!"
                   nodeColor={(node) => {
                     const data = node.data as NodeData;
                     return data.component?.color || "#8b5cf6";
