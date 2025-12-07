@@ -198,9 +198,9 @@ export function AIChatPanel({ isOpen, onToggle, isMobile }: AIChatPanelProps) {
         : 100;
     const startY = 100;
 
-    // Better spacing to prevent overlapping - generous spacing
-    const horizontalSpacing = 280; // Space between node centers horizontally
-    const verticalSpacing = 180; // Space between node centers vertically
+    // Generous spacing to prevent overlapping labels
+    const horizontalSpacing = 320; // Space between node centers horizontally
+    const verticalSpacing = 220; // Space between node centers vertically
     const nodesPerRow = 3; // Nodes per row for better readability
 
     suggestion.components.forEach((comp, index) => {

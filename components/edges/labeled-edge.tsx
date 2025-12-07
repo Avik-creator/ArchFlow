@@ -27,14 +27,18 @@ export function LabeledEdge({
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 8,
+    borderRadius: 12,
   });
 
-  // Offset label slightly based on edge direction to reduce overlaps
-  const isHorizontal =
-    Math.abs(targetX - sourceX) > Math.abs(targetY - sourceY);
-  const offsetX = isHorizontal ? 0 : targetX > sourceX ? 10 : -10;
-  const offsetY = isHorizontal ? (targetY > sourceY ? 10 : -10) : 0;
+  // Calculate dynamic offset based on edge angle to spread labels apart
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const angle = Math.atan2(dy, dx);
+
+  // Offset perpendicular to the edge direction for better separation
+  const offsetDistance = 15;
+  const offsetX = Math.sin(angle) * offsetDistance;
+  const offsetY = -Math.cos(angle) * offsetDistance;
 
   return (
     <>
@@ -57,15 +61,19 @@ export function LabeledEdge({
                 labelX + offsetX
               }px, ${labelY + offsetY}px)`,
               pointerEvents: "all",
+              zIndex: 1000,
             }}
             className="nodrag nopan"
           >
             <div
-              className="px-2 py-0.5 text-[10px] font-medium rounded-md border shadow-sm max-w-[140px] truncate"
+              className="px-2 py-1 text-[10px] font-medium rounded-md border shadow-lg text-center leading-tight"
               style={{
-                backgroundColor: "rgba(10, 10, 10, 0.95)",
-                borderColor: selected ? "#a855f7" : "rgba(82, 82, 82, 0.5)",
-                color: selected ? "#e9d5ff" : "#a1a1aa",
+                backgroundColor: "rgba(10, 10, 10, 0.98)",
+                borderColor: selected ? "#a855f7" : "rgba(82, 82, 82, 0.6)",
+                color: selected ? "#e9d5ff" : "#d4d4d8",
+                maxWidth: "120px",
+                wordWrap: "break-word",
+                whiteSpace: "normal",
               }}
               title={typeof label === "string" ? label : undefined}
             >
