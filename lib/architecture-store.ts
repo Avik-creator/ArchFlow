@@ -100,19 +100,51 @@ export const useArchitectureStore = create<ArchitectureStore>()(
       },
 
       onConnect: (connection) => {
+        // Check minimum distance between nodes and adjust if needed
+        const currentNodes = get().nodes;
+        const sourceNode = currentNodes.find((n) => n.id === connection.source);
+        const targetNode = currentNodes.find((n) => n.id === connection.target);
+        let updatedNodes = currentNodes;
+
+        if (sourceNode && targetNode) {
+          const dx = targetNode.position.x - sourceNode.position.x;
+          const dy = targetNode.position.y - sourceNode.position.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const minDistance = 200; // Minimum distance between connected nodes
+
+          // If nodes are too close, move target node away
+          if (distance < minDistance) {
+            // Handle case where nodes are at same position
+            const angle = distance < 1 ? Math.PI / 4 : Math.atan2(dy, dx);
+            const newX = sourceNode.position.x + Math.cos(angle) * minDistance;
+            const newY = sourceNode.position.y + Math.sin(angle) * minDistance;
+
+            updatedNodes = currentNodes.map((n) =>
+              n.id === connection.target
+                ? { ...n, position: { x: newX, y: newY } }
+                : n
+            );
+          }
+        }
+
         const edgeId = `e-${connection.source ?? "unknown"}-${
           connection.target ?? "unknown"
         }-${Date.now()}`;
         const color = getEdgeColor(edgeId);
+        const connWithData = connection as Connection & {
+          data?: { label?: string };
+          label?: string;
+        };
         const labelFromData =
-          typeof connection.data?.label === "string"
-            ? connection.data.label
+          typeof connWithData.data?.label === "string"
+            ? connWithData.data.label
             : "";
         const labelFromConnection =
-          typeof connection.label === "string" ? connection.label : "";
+          typeof connWithData.label === "string" ? connWithData.label : "";
         const label = labelFromConnection || labelFromData;
 
         set({
+          nodes: updatedNodes,
           edges: enhanceEdges(
             addEdge(
               {
