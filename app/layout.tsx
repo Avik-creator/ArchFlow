@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   authors: [{ name: "ArchFlow" }],
   creator: "ArchFlow",
   publisher: "ArchFlow",
-  metadataBase: new URL("https://archflow.avikmukherjee.me"),
+  metadataBase: new URL("https://archflow.avikmukherjee.com"),
   alternates: {
     canonical: "/",
   },
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     description:
       "Build, visualize, and test your system architecture with an intuitive drag-and-drop interface. Connect to real APIs, simulate data flows, and iterate fast — all while keeping your designs completely private.",
     type: "website",
-    url: "https://archflow.avikmukherjee.me",
+    url: "https://archflow.avikmukherjee.com",
     siteName: "ArchFlow",
     images: [
       {
