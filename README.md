@@ -1,3 +1,5 @@
+
+
 # ArchFlow
 
 > Privacy-first visual workspace for designing, simulating, and sharing system architectures.
@@ -42,6 +44,8 @@ Then open [http://localhost:3000](http://localhost:3000).
 | `pnpm build`  | Production build + type checks   |
 | `pnpm start`  | Launch built app                 |
 | `pnpm lint`   | ESLint (includes TypeScript)     |
+| `pnpm test`   | Run Vitest test suite            |
+| `pnpm test:watch` | Run tests in watch mode      |
 
 ## 📁 Project Structure
 
@@ -76,4 +80,3 @@ Key files:
 ---
 
 Built with ♥️ to make architecture thinking fast, collaborative, and private.
-
